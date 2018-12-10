@@ -978,7 +978,22 @@ export class FoxBitClient {
     return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
   }
 
-  cancelQuote(omsId: number, bidQuoteId: number, askQuoteId: number, accountId?: number, instrumentId?: number) : Observable<GenericResponse> {
+  /**
+   * Cancels a quote that has not been executed yet.
+   * Quoting is not enabled for the retail end user of the AlphaPoint software.
+   * Only registered market participants or market makers may quote.
+   * Only a trading venue operator can cancel quotes for another user.
+   *
+   * @param {number} omsId The ID of the Order Management System where the quote was requested. Required
+   * @param {number} bidQuoteId The ID of the bid quote. Required.
+   * @param {number} askQuoteId The ID of the ask quote. Required
+   * @param {number} [accountId] The ID of the account that requested the quote. Conditionally optional
+   * @param {number} [instrumentId] The ID of the instrument being quoted. Conditionally optional.
+   * @returns {Observable<GenericResponse>}
+   * @memberof FoxBitClient
+   */
+  cancelQuote(omsId: number, bidQuoteId: number, askQuoteId: number, accountId?: number, instrumentId?: number) 
+  : Observable<GenericResponse> {
 
     const endpointName = 'CancelQuote';
     const param = {
