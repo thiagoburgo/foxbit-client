@@ -978,28 +978,6 @@ export class FoxBitClient {
     return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
   }
 
-  /**
-   *
-   *
-   * @param {number} omsId
-   * @param {number} bidQuoteId
-   * @param {number} askQuoteId
-   * @param {number} [accountId]
-   * @param {number} [instrumentId]
-   * @returns {Observable<GenericResponse>}
-   * @memberof FoxBitClient
-   */
-  /**
-   *
-   *
-   * @param {number} omsId
-   * @param {number} bidQuoteId
-   * @param {number} askQuoteId
-   * @param {number} [accountId]
-   * @param {number} [instrumentId]
-   * @returns {Observable<GenericResponse>}
-   * @memberof FoxBitClient
-   */
   cancelQuote(omsId: number, bidQuoteId: number, askQuoteId: number, accountId?: number, instrumentId?: number) : Observable<GenericResponse> {
 
     const endpointName = 'CancelQuote';
