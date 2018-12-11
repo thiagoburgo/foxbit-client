@@ -1,22 +1,18 @@
 import { Observable, Subject } from 'rxjs';
 import { concatMap, map } from 'rxjs/operators';
 import WebSocket from 'ws';
-
 import { EndpointMethodDescriptor, EndpointMethodReplyType, EndpointMethodType } from './api-descriptors';
+import { MessageType } from './message-enums';
 import { MessageFrame } from './message-frame';
+import { CancelReplaceOrderRequest, OrderFeeRequest, SendOrderRequest } from './message-request';
 import {
-  AccountFeesResponse,
-  AuthenticateResponse,
-  GenericResponse,
-  InstrumentResponse,
-  L2SnapshotResponse,
-  ProductResponse,
-  SubscriptionL2Response,
-  SubscriptionLevel1Response,
-  SubscriptionTickerResponse,
-  UserInfoResponse,
+  AccountFeesResponse, AccountInfoResult, AccountPositionResult,
+  AccountTradesResult, AuthenticateResponse, CancelReplaceOrderResult,
+  GenericResponse, InstrumentResponse, L2SnapshotResponse, OpenOrdersResult,
+  OrderFeeResult, OrderHistoryResult, ProductResponse, SendOrderResult,
+  SubscriptionL2Response, SubscriptionLevel1Response, SubscriptionTickerResponse,
+  UserInfoResponse
 } from './message-result';
-import { MessageType } from './message-type';
 
 export class FoxBitClient {
 
@@ -885,8 +881,9 @@ export class FoxBitClient {
    * @returns {Observable<GenericResponse>}
    * @memberof FoxBitClient
    */
-  setUserInfo(userId: number, userName: string, password: string, email: string,
-              emailVerified: boolean, accountId: number, use2FA: boolean): Observable<UserInfoResponse> {
+  setUserInfo(
+    userId: number, userName: string, password: string, email: string,
+    emailVerified: boolean, accountId: number, use2FA: boolean): Observable<UserInfoResponse> {
 
     const endpointName = 'SetUserInfo';
     const param = {
@@ -906,8 +903,12 @@ export class FoxBitClient {
     return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
   }
 
- /*
-  * | UserId 37 | AccId 14 | Instr 25 |                                    Result                                   |
+  /**
+   * Cancels all open matching orders for the specified instrument, account, user (subject to permission level)
+   * or a combination of them on a specific Order Management System.
+   * User and account permissions govern cancellation actions.
+   *
+   * | UserId 37 | AccId 14 | Instr 25 |                                    Result                                   |
    * |:---------:|:--------:|:--------:|:---------------------------------------------------------------------------:|
    * |     X     |     X    |     X    | Account #14 belonging to user #37 for instrument #25.                       |
    * |     X     |     X    |          | Account #14 belonging to user #37 for all instruments.                      |
@@ -918,13 +919,6 @@ export class FoxBitClient {
    * |           |          |     X    | All accounts of all users for instrument #25. (requires special permission) |
    * |           |          |          | All accounts of all users for all instruments (requires special permission) |
    *
- */
-
-  /**
-   * Cancels all open matching orders for the specified instrument, account, user (subject to permission level)
-   * or a combination of them on a specific Order Management System.
-   * User and account permissions govern cancellation actions.
-   *   
    * @param {number} omsId The Order Management System under which the account operates.Required
    * @param {number} [accountId] The account for which all orders are being canceled. Conditionally optional.
    * @param {number} [userId] The ID of the user whose orders are being canceled. Conditionally optional.
@@ -992,8 +986,8 @@ export class FoxBitClient {
    * @returns {Observable<GenericResponse>}
    * @memberof FoxBitClient
    */
-  cancelQuote(omsId: number, bidQuoteId: number, askQuoteId: number, accountId?: number, instrumentId?: number) 
-  : Observable<GenericResponse> {
+  cancelQuote(omsId: number, bidQuoteId: number, askQuoteId: number, accountId?: number, instrumentId?: number)
+    : Observable<GenericResponse> {
 
     const endpointName = 'CancelQuote';
     const param = {
@@ -1011,32 +1005,224 @@ export class FoxBitClient {
     return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
   }
 
-  //
-  // cancelReplaceOrder() {
-  // }
-  //
-  //
-  // getAccountPositions() {
-  // }
-  //
-  // getAccountTrades() {
-  // }
-  //
-  // getAccountTransactions() {
-  // }
-  //
-  // getOpenOrders() {
-  // }
-  //
-  // sendOrder() {
-  // }
-  //
-  // getOrderFee() {
-  // }
-  //
-  // getOrderHistory() {
-  // }
-  //
+  /**
+   * CancelReplaceOrder is single API call that both cancels an existing order and replaces it with a
+   * new order. Canceling one order and replacing it with another also cancels the order’s priority in
+   * the order book. You can use ModifyOrder to preserve priority in the book; but ModifyOrder only
+   * allows a reduction in order quantity.
+   * `Note: ` CancelReplaceOrder sacrifices the order’s priority in the order book.
+   * @param {CancelReplaceOrderRequest} cancelReplaceOrderReq
+   * @returns {Observable<CancelReplaceOrderResult>}
+   * @memberof FoxBitClient
+   */
+  cancelReplaceOrder(cancelReplaceOrderReq: CancelReplaceOrderRequest): Observable<CancelReplaceOrderResult> {
+
+    const endpointName = 'CancelReplaceOrder';
+
+    const frame = new MessageFrame(MessageType.Request, endpointName, cancelReplaceOrderReq);
+
+    this.prepareAndSendFrame(frame);
+
+    return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
+  }
+
+  /**
+   * Returns detailed information about one specific account belonging to the authenticated user and
+   * existing on a specific Order Management System
+   *
+   * @param {number} omsId The ID of the Order Management System on which the account exists
+   * @param {number} accountId  The ID of the account on the Order Management System for which information will be returned.
+   * @param {number} accountHandle  AccountHandle is a unique user-assigned name that is checked at create
+   * time by the Order Management System. Alternate to Account ID.
+   * @returns {Observable<AccountInfoResult>}
+   * @memberof FoxBitClient
+   */
+  getAccountInfo(omsId: number, accountId: number, accountHandle: number): Observable<AccountInfoResult> {
+    const endpointName = 'GetAccountInfo';
+
+    const param = {
+      OMSId: omsId,
+      AccountId: accountId,
+      AccountHandle: accountHandle
+    };
+
+    const frame = new MessageFrame(MessageType.Request, endpointName, param);
+
+    this.prepareAndSendFrame(frame);
+
+    return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
+  }
+
+  /**
+   * Retrieves a list of positions (balances) for a specific user account running
+   * under a specific Order Management System.
+   * The trading day runs from UTC Midnight to UTC Midnight.
+   * @param {number} accountId  The ID of the authenticated user’s account on the Order Management
+   * System for which positions will be returned.
+   * @param {number} omsId  The ID of the Order Management System to which the user belongs.
+   * A user will belong only to one OMS.
+   * @returns {Observable<AccountPositionResult[]>}
+   * @memberof FoxBitClient
+   */
+  getAccountPositions(accountId: number, omsId: number): Observable<AccountPositionResult[]> {
+    const endpointName = 'GetAccountPositions';
+
+    const param = {
+      OMSId: omsId,
+      AccountId: accountId
+    };
+
+    const frame = new MessageFrame(MessageType.Request, endpointName, param);
+
+    this.prepareAndSendFrame(frame);
+
+    return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
+  }
+
+  /**
+   * Requests the details on up to `200` past trade executions for a single specific user account and its
+   * Order Management System, starting at index `i`, where `i` is an integer identifying a specific execution
+   * in reverse order; that is, the most recent execution has an index of `0`, and increments by one as trade
+   * executions recede into the past.
+   * The operator of the trading venue determines how long to retain an accessible trading history
+   * before archiving.
+   * @param {number} accountId The ID of the authenticated user’s account.
+   * @param {number} omsId The ID of the Order Management System to which the user belongs.
+   * A user will belong only to one OMS.
+   * @param {number} startIndex The starting index into the history of trades, from `0`
+   * (the most recent trade).
+   * @param {number} count The number of trades to return. The system can return up to `200` trades.
+   * @returns {Observable<AccountTradesResult>}
+   * @memberof FoxBitClient
+   */
+  getAccountTrades(accountId: number, omsId: number, startIndex: number, count: number): Observable<AccountTradesResult> {
+    const endpointName = 'GetAccountTrades';
+
+    const param = {
+      OMSId: omsId,
+      AccountId: accountId,
+      StartIndex: startIndex,
+      Count: count
+    };
+
+    const frame = new MessageFrame(MessageType.Request, endpointName, param);
+
+    this.prepareAndSendFrame(frame);
+
+    return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
+  }
+
+  /**
+   * Returns a list of transactions for a specific account on an Order Management System.
+   * The owner of the trading venue determines how long to retain order history before archiving.
+   * @param {number} accountId The ID of the account for which transactions will be returned.
+   * If not specified, the call returns transactions for the default account for the logged-in user
+   * @param {number} omsId The ID of the Order Management System from which the account’s
+   * transactions will be returned.
+   * @param {number} depth The number of transactions that will be returned, starting with
+   * the most recent transaction.
+   * @returns {Observable<AccountTradesResult[]>}
+   * @memberof FoxBitClient
+   */
+  getAccountTransactions(accountId: number, omsId: number, depth: number): Observable<AccountTradesResult[]> {
+    const endpointName = 'GetAccountTransactions';
+
+    const param = {
+      OMSId: omsId,
+      AccountId: accountId,
+      Depth: depth
+    };
+
+    const frame = new MessageFrame(MessageType.Request, endpointName, param);
+
+    this.prepareAndSendFrame(frame);
+
+    return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
+  }
+
+  /**
+   * Returns an array of 0 or more orders that have not yet been filled (open orders) for a single account
+   * for a given user on a specific Order Management System. The call returns an empty array if a user
+   * has no open orders.
+   * @param {number} accountId The ID of the authenticated user’s account
+   * @param {number} omsId The ID of the Order Management System to which the user belongs.
+   * A user will belong only to one OMS.
+   * @returns {Observable<OpenOrdersResult>}
+   * @memberof FoxBitClient
+   */
+  getOpenOrders(accountId: number, omsId: number): Observable<OpenOrdersResult> {
+    const endpointName = 'GetOpenOrders';
+
+    const param = {
+      OMSId: omsId,
+      AccountId: accountId
+    };
+
+    const frame = new MessageFrame(MessageType.Request, endpointName, param);
+
+    this.prepareAndSendFrame(frame);
+
+    return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
+  }
+
+  /**
+   * Creates an order. Anyone submitting an order should also subscribe to the various market data and
+   * event feeds, or call GetOpenOrders or GetOrderStatus to monitor the status of the order. If the
+   * order is not in a state to be executed, GetOpenOrders will not return it.
+   * @param {SendOrderRequest} sendOrderRequest
+   * @returns {Observable<SendOrderResult>}
+   * @memberof FoxBitClient
+   */
+  sendOrder(sendOrderRequest: SendOrderRequest): Observable<SendOrderResult> {
+    const endpointName = 'SendOrder';
+
+    const frame = new MessageFrame(MessageType.Request, endpointName, sendOrderRequest);
+
+    this.prepareAndSendFrame(frame);
+
+    return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
+  }
+
+  /**
+   * Returns an estimate of the fee for a specific order and order type.
+   * Fees are set and calculated by the operator of the trading venue.
+   * @param {OrderFeeRequest} orderFeeRequest
+   * @returns {Observable<OrderFeeResult>}
+   * @memberof FoxBitClient
+   */
+  getOrderFee(orderFeeRequest: OrderFeeRequest): Observable<OrderFeeResult> {
+    const endpointName = 'GetOrderFee';
+
+    const frame = new MessageFrame(MessageType.Request, endpointName, orderFeeRequest);
+
+    this.prepareAndSendFrame(frame);
+
+    return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
+  }
+
+  /**
+   * Returns a complete list of all orders, both open and executed, for a specific account on the specified
+   * Order Management System.
+   * @param {number} accountId The ID of the Order Management System where the orders were placed
+   * @param {number} omsId The ID of the account whose orders will be returned
+   * @returns {Observable<OrderHistoryResult>}
+   * @memberof FoxBitClient
+   */
+  getOrderHistory(accountId: number, omsId: number): Observable<OrderHistoryResult> {
+    const endpointName = 'GetOrderHistory';
+
+    const param = {
+      OMSId: omsId,
+      AccountId: accountId
+    };
+
+    const frame = new MessageFrame(MessageType.Request, endpointName, param);
+
+    this.prepareAndSendFrame(frame);
+
+    return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
+  }
+
   // getAllDepositTickets() {
   // }
   //
