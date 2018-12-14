@@ -1,4 +1,4 @@
-import { ActionType, InstrumentType, MarketPriceDirection, ProductType, SessionStatus, Side, OrderType, SideResponse, OrderStateResponse, ChangeReasonResponse, SendOrderStatusResponse, OrderTypeResponse } from './message-enums';
+import { ActionType, InstrumentType, MarketPriceDirection, ProductType, SessionStatus, Side, OrderType, SideResponse, OrderStateResponse, ChangeReasonResponse, SendOrderStatusResponse, OrderTypeResponse, DepositStatusResponse } from './message-enums';
 
 export interface GenericResponse {
 
@@ -1212,4 +1212,421 @@ export interface OrderHistoryResult {
    * @memberof OrderHistoryResult
    */
   OMSId: number;
+}
+
+export interface AllDepositTicketsResult {
+  /**
+   * The ID of the Asset Manager module, which interacts with the OMS and
+   * the trading venue’s matching engine. The Asset Manager accepts, holds, and
+   * disburses assets (products)
+   * @type {number}
+   * @memberof AllDepositTicketsResult
+   */
+  AssetManagerId: number;
+
+  /**
+   * The ID of the account into which the deposit was made.
+   * @type {number}
+   * @memberof AllDepositTicketsResult
+   */
+  AccountId: number;
+
+  /**
+   * The ID of the asset being deposited. Equivalent to product ID. *AssetId = ProductId*,
+   * and uses the same ID numbers.
+   * @type {number}
+   * @memberof AllDepositTicketsResult
+   */
+  AssetId: number;
+
+  /**
+   * The name of the asset being deposited. USD (dollars), BTC (bitcoin),
+   * gold, NZD (New Zealand dollars) for example. This is not an enumerated field, to
+   * allow for flexibility.
+   * @type {string}
+   * @memberof AllDepositTicketsResult
+   */
+  AssetName: string;
+
+  /**
+   * The amount of the asset being deposited.
+   * @type {number}
+   * @memberof AllDepositTicketsResult
+   */
+  Amount: number;
+
+  /**
+   * The ID of the Order Management System handling the deposits.
+   * @type {number}
+   * @memberof AllDepositTicketsResult
+   */
+  OMSId: number;
+
+  /**
+   * A GUID (globally unique ID) string that identifies this specific deposit.
+   * @type {string}
+   * @memberof AllDepositTicketsResult
+   */
+  RequestCode: string;
+
+  /**
+   * The on-line IP (Internet Protocol) address from which the deposit is made.
+   * This can be a traditional IPv4 dotted quad (192.168.168.1) or a 128-bit IPv6 address.
+   * @type {string}
+   * @memberof AllDepositTicketsResult
+   */
+  RequestIP: string;
+
+  /**
+   * The ID of the user sending the request and making the deposit
+   * @type {number}
+   * @memberof AllDepositTicketsResult
+   */
+  RequestUser: number;
+
+  /**
+   * The name of the user sending the request and making the deposit.
+   * For example, “John Smith.”
+   * @type {string}
+   * @memberof AllDepositTicketsResult
+   */
+  RequestUserName: string;
+
+  /**
+   * The ID of the operator of the trading venue
+   * @type {number}
+   * @memberof AllDepositTicketsResult
+   */
+  OperatorId: number;
+
+  /**
+   * The current status of the deposit. One of:
+   * - 0 New
+   * - 1 AdminProcessing
+   * - 2 Accepted
+   * - 3 Rejected
+   * - 4 SystemProcessing
+   * - 5 FullyProcessed
+   * - 6 Failed
+   * - 7 Pending
+   * ***********************************
+   * Note: The value of Status is an integer in the request for GetAllDepositTickets.
+   * In the response, it is a string..
+   * ***********************************
+   * @type {DepositStatusResponse}
+   * @memberof AllDepositTicketsResult
+   */
+  Status: DepositStatusResponse;
+
+  /**
+   * The value of the fee for making the deposit, if any
+   * @type {number}
+   * @memberof AllDepositTicketsResult
+   */
+  FeeAmt: number;
+
+  /**
+   * The ID of the most recent user updating this deposit ticket
+   * @type {number}
+   * @memberof AllDepositTicketsResult
+   */
+  UpdatedByUser: number;
+
+  /**
+   * The name of the most recent user updating this deposit ticket,
+   * for example, “Joan Smith.”
+   * @type {string}
+   * @memberof AllDepositTicketsResult
+   */
+  UpdatedByUserName: string;
+
+  /**
+   * A system-assigned unique deposit ticket number that identifies the
+   * deposit. The value for TicketNumber is returned by the **GetDepositTicket** calls:
+   * **GetAllDepositTickets** and **GetDepositTicket**
+   * @type {number}
+   * @memberof AllDepositTicketsResult
+   */
+  TicketNumber: number;
+
+  /**
+   * A list of strings and string/value pairs that holds information about the
+   * source of funds being deposited. This information was entered when the deposit
+   * ticket was created, and as required by the account provider.
+   * @type {string}
+   * @memberof AllDepositTicketsResult
+   */
+  DepositInfo: string;
+
+  /**
+   * The time and date that the deposit was created, in ISO 8601 format.
+   * @type {string}
+   * @memberof AllDepositTicketsResult
+   */
+  CreatedTimestamp: string;
+
+  /**
+   * The time and date that the deposit ticket last was updated, in ISO 8601 format.
+   * @type {string}
+   * @memberof AllDepositTicketsResult
+   */
+  LastUpdateTimeStamp: string;
+
+  /**
+   * *Comments* are sets of system-generated string/value pairs
+   * that provide information about the deposit’s process through the system. Neither
+   * users nor admins enter these comments directly.
+   * @type {string[]}
+   * @memberof AllDepositTicketsResult
+   */
+  Comments?: string[];
+
+  /**
+   * A set of base-64 strings usually providing an image or a PDF.
+   * This image or file may be a transaction receipt or other information that the
+   * depositor wishes to attach to the deposit for record-keeping purposes.
+   * @type {string[]}
+   * @memberof AllDepositTicketsResult
+   */
+  Attachments?: string[];
+}
+
+export interface AllWithdrawTicketsResult {
+  /**
+   * The ID of the Asset Manager module.
+   * @type {number}
+   * @memberof AllWithdrawTicketsResult
+   */
+  AssetManagerId: number;
+  /**
+   * The ID of the account that made the withdrawal.
+   * @type {number}
+   * @memberof AllWithdrawTicketsResult
+   */
+  AccountId: number;
+  /**
+   * The ID of the asset in which the withdrawal is denominated, for example,
+   * US Dollar or BitCoin both have an associated *AssetId*. *AssetId* and *ProductId* are
+   * identical in numerical content. You must use *AssetId* here.
+   * @type {number}
+   * @memberof AllWithdrawTicketsResult
+   */
+  AssetId: number;
+  /**
+   * The readable name of the asset in which the withdrawal is denominated, 
+   * for example, “US Dollar” or “BitCoin.”
+   * @type {string}
+   * @memberof AllWithdrawTicketsResult
+   */
+  AssetName: string;
+  /**
+   * The amount of the withdrawal.
+   * @type {number}
+   * @memberof AllWithdrawTicketsResult
+   */
+  Amount: number;
+  /**
+   * See the TemplateForm object, following.
+   * The content of a template depends on the account provider that you use for
+   * deposits and withdrawals. This template is provided as a general reference example
+   * @type {*}
+   * @memberof AllWithdrawTicketsResult
+   */
+  TemplateForm: any;
+  /**
+   * The name of the template being used. The template controls the string/value
+   * pairs in the TemplateForm object returned for each withdrawal.
+   * These vary by account provider
+   * @type {string}
+   * @memberof AllWithdrawTicketsResult
+   */
+  TemplateType: string;
+  /**
+   * 
+   * @type {string}
+   * @memberof AllWithdrawTicketsResult
+   */
+  TemplateFormType: string;
+  /**
+   *
+   *
+   * @type {string}
+   * @memberof AllWithdrawTicketsResult
+   */
+  Comment: string;
+  /**
+   *
+   *
+   * @type {string}
+   * @memberof AllWithdrawTicketsResult
+   */
+  ExternalAddress: string;
+
+  /**
+   * The ID of the Order Management System
+   * @type {number}
+   * @memberof AllWithdrawTicketsResult
+   */
+  OMSId: number;
+  /**
+   * A GUID (globally unique ID) string that identifies this specific withdrawal.
+   * @type {string}
+   * @memberof AllWithdrawTicketsResult
+   */
+  RequestCode: string;
+  /**
+   * The IP address from which the withdrawal was initiated,
+   * in either IPv4 dotted quad format or IPv6 format.
+   * @type {string}
+   * @memberof AllWithdrawTicketsResult
+   */
+  RequestIP: string;
+  /**
+   * The ID of the user who made the original withdrawal reques
+   * @type {number}
+   * @memberof AllWithdrawTicketsResult
+   */
+  RequestUserId: number;
+  /**
+   * The name of the user who made the original withdrawal request.
+   * @type {string}
+   * @memberof AllWithdrawTicketsResult
+   */
+  RequestUserName: string;
+  /**
+   * The ID of the operator of the trading venue on which
+   * the withdrawal request was made.
+   * @type {number}
+   * @memberof AllWithdrawTicketsResult
+   */
+  OperatorId: number;
+  /**
+   *
+   *
+   * @type {string}
+   * @memberof AllWithdrawTicketsResult
+   */
+  Status: string;
+  /**
+   *
+   *
+   * @type {number}
+   * @memberof AllWithdrawTicketsResult
+   */
+  FeeAmt: number;
+  /**
+   *
+   *
+   * @type {number}
+   * @memberof AllWithdrawTicketsResult
+   */
+  UpdatedByUser: number;
+  /**
+   *
+   *
+   * @type {string}
+   * @memberof AllWithdrawTicketsResult
+   */
+  UpdatedByUserName: string;
+  /**
+   *
+   *
+   * @type {number}
+   * @memberof AllWithdrawTicketsResult
+   */
+  TicketNumber: number;
+  /**
+   *
+   *
+   * @type {string}
+   * @memberof AllWithdrawTicketsResult
+   */
+  CreatedTimestamp: string;
+  /**
+   *
+   *
+   * @type {string}
+   * @memberof AllWithdrawTicketsResult
+   */
+  LastUpdateTimestamp: string;
+  /**
+   *
+   *
+   * @type {Comment[]}
+   * @memberof AllWithdrawTicketsResult
+   */
+  Comments?: Comment[];
+  /**
+   *
+   *
+   * @type {string[]}
+   * @memberof AllWithdrawTicketsResult
+   */
+  Attachments?: string[];
+  /**
+   *
+   *
+   * @type {any[]}
+   * @memberof AllWithdrawTicketsResult
+   */
+  AuditLog?: any[];
+}
+
+export interface Comment {
+  /**
+   *
+   *
+   * @type {number}
+   * @memberof Comment
+   */
+  CommentId: number;
+  /**
+   *
+   *
+   * @type {number}
+   * @memberof Comment
+   */
+  EnteredBy: number;
+  /**
+   *
+   *
+   * @type {string}
+   * @memberof Comment
+   */
+  EnteredDateTime: string;
+  /**
+   *
+   *
+   * @type {string}
+   * @memberof Comment
+   */
+  Comment: string;
+  /**
+   *
+   *
+   * @type {number}
+   * @memberof Comment
+   */
+  OperatorId: number;
+  /**
+   *
+   *
+   * @type {number}
+   * @memberof Comment
+   */
+  OMSId: number;
+  /**
+   *
+   *
+   * @type {string}
+   * @memberof Comment
+   */
+  TicketCode: string;
+  /**
+   *
+   *
+   * @type {number}
+   * @memberof Comment
+   */
+  TicketId: number;
 }

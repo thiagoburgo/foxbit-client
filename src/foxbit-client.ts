@@ -4,13 +4,27 @@ import WebSocket from 'ws';
 import { EndpointMethodDescriptor, EndpointMethodReplyType, EndpointMethodType } from './api-descriptors';
 import { MessageType } from './message-enums';
 import { MessageFrame } from './message-frame';
-import { CancelReplaceOrderRequest, OrderFeeRequest, SendOrderRequest } from './message-request';
+import { AllDepositOrWithdrawTicketsRequest, CancelReplaceOrderRequest, OrderFeeRequest, SendOrderRequest } from './message-request';
 import {
-  AccountFeesResponse, AccountInfoResult, AccountPositionResult,
-  AccountTradesResult, AuthenticateResponse, CancelReplaceOrderResult,
-  GenericResponse, InstrumentResponse, L2SnapshotResponse, OpenOrdersResult,
-  OrderFeeResult, OrderHistoryResult, ProductResponse, SendOrderResult,
-  SubscriptionL2Response, SubscriptionLevel1Response, SubscriptionTickerResponse,
+  AccountFeesResponse,
+  AccountInfoResult,
+  AccountPositionResult,
+  AccountTradesResult,
+  AllDepositTicketsResult,
+  AllWithdrawTicketsResult,
+  AuthenticateResponse,
+  CancelReplaceOrderResult,
+  GenericResponse,
+  InstrumentResponse,
+  L2SnapshotResponse,
+  OpenOrdersResult,
+  OrderFeeResult,
+  OrderHistoryResult,
+  ProductResponse,
+  SendOrderResult,
+  SubscriptionL2Response,
+  SubscriptionLevel1Response,
+  SubscriptionTickerResponse,
   UserInfoResponse
 } from './message-result';
 
@@ -1223,18 +1237,96 @@ export class FoxBitClient {
     return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
   }
 
-  // getAllDepositTickets() {
-  // }
-  //
-  // getAllWithdrawTickets() {
-  // }
-  //
-  // getDepositTicket() {
-  // }
-  //
-  // getWithdrawTicket() {
-  // }
-  //
+  /**
+   * Returns all deposit tickets that match the string/value pairs included in the request, starting at a
+   * specific ticket, and returning up to a total number that can be specified in the request.
+   * @param {AllDepositOrWithdrawTicketsRequest} allDepositTicketsRequest OMSId and OperatorId are required;
+   * other string/value pairs are optional.
+   * AmountOperator must be included if an Amount value is included.
+   * @returns {Observable<AllDepositTicketsResult>}
+   * @memberof FoxBitClient
+   */
+  getAllDepositTickets(allDepositTicketsRequest: AllDepositOrWithdrawTicketsRequest): Observable<AllDepositTicketsResult[]> {
+    const endpointName = 'GetAllDepositTickets';
+
+    const frame = new MessageFrame(MessageType.Request, endpointName, allDepositTicketsRequest);
+
+    this.prepareAndSendFrame(frame);
+
+    return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
+  }
+
+  getAllWithdrawTickets(allWithdrawTicketsRequest: AllDepositOrWithdrawTicketsRequest): Observable<AllWithdrawTicketsResult[]> {
+    const endpointName = 'GetAllWithdrawTickets';
+
+    const frame = new MessageFrame(MessageType.Request, endpointName, allWithdrawTicketsRequest);
+
+    this.prepareAndSendFrame(frame);
+
+    return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
+  }
+
+  /**
+   * Returns a single deposit ticket by matching its request code to one already in the database.
+   * ************
+   * Only admin-level users can issue this call.
+   * @param {number} omsId  The ID of the Order Management System where the withdrawal was made.
+   * @param {number} operatorId  The ID of the trading venue operator on the system where
+   * the withdraw was made.
+   * @param {string} requestCode A GUID (globally unique ID) that identifies the specific withdrawal ticket
+   * you want to return. Obtain the RequestCode from **CreateWithdrawTicket** or **GetAllWithdrawTickets**.
+   * @param {number} accountId The ID of the account from which the withdrawal was made.
+   * @returns {Observable<AllWithdrawTicketsResult>}
+   * @memberof FoxBitClient
+   */
+  getDepositTicket(omsId: number, operatorId: number, requestCode: string, accountId: number): Observable<AllDepositTicketsResult> {
+    const endpointName = 'GetDepositTicket';
+
+    const param = {
+      OMSId: omsId,
+      OperatorId: operatorId,
+      RequestCode: requestCode,
+      AccountId: accountId
+    };
+
+    const frame = new MessageFrame(MessageType.Request, endpointName, param);
+
+    this.prepareAndSendFrame(frame);
+
+    return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
+  }
+
+  /**
+   * Returns a single withdraw ticket from the Order Management System, trading venue operator, and
+   * account that matches the GUID (globally unique identifier) in RequestCode. Obtain the GUID from
+   * the call CreateWithdrawTicket when the ticket is first created, or from GetAllWithdrawTickets,
+   * another admin-level-only call. An administrator can use GetWithdrawTicket to return any single
+   * withdrawal ticket in the system.
+   * @param {number} omsId  The ID of the Order Management System where the withdrawal was made.
+   * @param {number} operatorId  The ID of the trading venue operator on the system where
+   * the withdraw was made.
+   * @param {string} requestCode A GUID (globally unique ID) that identifies the specific withdrawal ticket
+   * you want to return. Obtain the RequestCode from **CreateWithdrawTicket** or **GetAllWithdrawTickets**.
+   * @param {number} accountId The ID of the account from which the withdrawal was made.
+   * @returns {Observable<AllWithdrawTicketsResult>}
+   * @memberof FoxBitClient
+   */
+  getWithdrawTicket(omsId: number, operatorId: number, requestCode: string, accountId: number): Observable<AllWithdrawTicketsResult> {
+    const endpointName = 'GetWithdrawTicket';
+
+    const param = {
+      OMSId: omsId,
+      OperatorId: operatorId,
+      RequestCode: requestCode,
+      AccountId: accountId
+    };
+
+    const frame = new MessageFrame(MessageType.Request, endpointName, param);
+
+    this.prepareAndSendFrame(frame);
+
+    return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
+  }
   // subscribeTrades(omsId: number, instrumentId: number, includeLastCount: number = 100): SubscriptionTradesResponse[] {
   //   const param = {
   //     OMSId: omsId,

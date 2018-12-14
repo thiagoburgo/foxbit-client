@@ -119,3 +119,31 @@ export enum SendOrderStatusResponse {
     Accepted = 'Accepted',
     Rejected = 'Rejected'
 }
+
+export enum DepositStatus {
+    New = 0,
+    AdminProcessing = 1,
+    Accepted = 2,
+    Rejected = 3,
+    SystemProcessing = 4,
+    FullyProcessed = 5,
+    Failed = 6,
+    Pending = 7
+}
+
+export enum DepositStatusResponse {
+    New = 'New',
+    AdminProcessing = 'AdminProcessing',
+    Accepted = 'Accepted',
+    Rejected = 'Rejected',
+    SystemProcessing = 'SystemProcessing',
+    FullyProcessed = 'FullyProcessed',
+    Failed = 'Failed',
+    Pending = 'Pending'
+}
+
+export enum AmountOperator {
+    TicketsEqualToAmount = 0,
+    TicketsEqualOrGreaterThanAmount = 1,
+    TicketsLessThanAmount = 2
+}

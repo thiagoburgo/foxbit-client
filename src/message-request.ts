@@ -1,4 +1,4 @@
-import { OrderType, PegPriceType, Side, TimeInForce, MakerTaker } from './message-enums';
+import { OrderType, PegPriceType, Side, TimeInForce, MakerTaker, DepositStatus, AmountOperator } from './message-enums';
 
 export interface CancelReplaceOrderRequest {
     /**
@@ -336,7 +336,7 @@ export interface OrderFeeRequest {
     Amount: number;
 
     /**
-     * The price at which the proposed trade would take place. Supply your price for a limit order; 
+     * The price at which the proposed trade would take place. Supply your price for a limit order;
      * the exact price is difficult to know before execution.
      * @type {number}
      * @memberof OrderFeeRequest
@@ -369,4 +369,114 @@ export interface OrderFeeRequest {
      * @memberof OrderFeeRequest
      */
     MakerTaker: MakerTaker;
+}
+
+export interface AllDepositOrWithdrawTicketsRequest {
+    /**
+     * The ID of the Order Management System on which the deposit tickets reside
+     * @type {number}
+     * @memberof AllDepositTicketsRequest
+     */
+    OMSId: number;
+
+    /**
+     * The ID of the operator of the trading venue.
+     * @type {number}
+     * @memberof AllDepositTicketsRequest
+     */
+    OperatorId: number;
+
+    /**
+     * The ID of the account
+     * @type {number}
+     * @memberof AllDepositTicketsRequest
+     */
+    AccountId: number;
+
+    /**
+     * The current status of the deposit. One of:
+     * - 0 New
+     * - 1 AdminProcessing
+     * - 2 Accepted
+     * - 3 Rejected
+     * - 4 SystemProcessing
+     * - 5 FullyProcessed
+     * - 6 Failed
+     * - 7 Pending
+     * ***********************************
+     * Note: The value of Status is an integer in the request for GetAllDepositTickets.
+     * In the response, it is a string..
+     * ***********************************
+     * @type {DepositStatus}
+     * @memberof AllDepositTicketsRequest
+     */
+    Status: DepositStatus;
+
+    /**
+     * The ID of a single deposit ticket that is unique across the Order
+     * Management System. By including a value for TicketId, you limit the returned
+     * information to a single ticket.
+     * @type {number}
+     * @memberof AllDepositTicketsRequest
+     */
+    TicketId: number;
+
+    /**
+     * The start of the period over which to return deposit tickets, in ISO 8601 format.
+     * @type {string}
+     * @memberof AllDepositTicketsRequest
+     */
+    StartTimestamp: string;
+
+    /**
+     * The end of the period over which to return deposit tickets, in ISO 8601 format
+     * @type {string}
+     * @memberof AllDepositTicketsRequest
+     */
+    EndTimestamp: string;
+
+    /**
+     * *Optional*. The deposit ticket at which to start returning the array of
+     * deposit tickets, starting from 0, the most recent deposit ticket, and working
+     * backwards in time.
+     * @type {number}
+     * @memberof AllDepositTicketsRequest
+     */
+    StartIndex: number;
+
+    /**
+     * *Optional*. The total number of deposit tickets to return in the array. Limit
+     * is a 32-bit integer value that can return over 4 billion tickets (4 thousand million).
+     * If Limit is not specified, all tickets are returned.
+     * @type {number}
+     * @memberof AllDepositTicketsRequest
+     */
+    Limit: number;
+
+    /**
+     * The name of the user making the deposit
+     * @type {string}
+     * @memberof AllDepositTicketsRequest
+     */
+    UserName: string;
+
+    /**
+     * The amount of the deposit. If you specify an *Amount* value, you must
+     * include *AmountOperator*
+     * @type {number}
+     * @memberof AllDepositTicketsRequest
+     */
+    Amount: number;
+
+    /**
+     * Tells the response to return tickets in ranges based on the Amount value.
+     * This string/value pair is required if you specify an Amount value. There is no
+     * AmountOperator setting for greater-than or less-than an Amount value.
+     * - 0 - returns tickets with values equal to the Amount value.
+     * - 1 - returns tickets with values equal to or greater than the Amount value.
+     * - 2 - returns tickets with values less than or equal to the Amount value.
+     * @type {AmountOperator}
+     * @memberof AllDepositTicketsRequest
+     */
+    AmountOperator: AmountOperator;
 }
