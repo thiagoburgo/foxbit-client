@@ -352,7 +352,7 @@ export class FoxBitClient {
    * @returns {Observable<AuthenticateResponse>}
    * @memberof FoxBitClient
    */
-  logIn(username: string, password: string): Observable<AuthenticateResponse> {
+  webAuthenticateUser(username: string, password: string): Observable<AuthenticateResponse> {
     const frame = new MessageFrame(MessageType.Request,
       'WebAuthenticateUser',
       {
@@ -363,6 +363,45 @@ export class FoxBitClient {
     this.prepareAndSendFrame(frame);
 
     return this.endpointDescriptorByMethod['WebAuthenticateUser'].methodSubject.asObservable();
+  }
+
+  /**
+   * Completes the second part of a two-factor authentication by sending the authentication token from
+   * the non-AlphaPoint authentication system to the Order Management System. The call returns a
+   * verification that the user logging in has been authenticated, and a token.
+   * Here is how the two-factor authentication process works:
+   *   1. Call WebAuthenticateUser. The response includes values for TwoFAType and
+   *      TwoFAToken. For example, TwoFAType may return “Google,” and the TwoFAToken then
+   *      returns a Google-appropriate token (which in this case would be a QR code).
+   *   2. Enter the TwoFAToken into the two-factor authentication program, for example, Google
+   *      Authenticator. The authentication program returns a different token.
+   *   3. Call Authenticate2FA with the token you received from the two-factor authentication
+   *      program (shown as YourCode in the request example below).
+   *
+   * @param {string} code Code holds the token obtained from the other authentication source.
+   * @param {string} [sessionToken] To send a session token to re-establish an interrupted session
+   * @returns {Observable<AuthenticateResponse>}
+   * @memberof FoxBitClient
+   */
+  authenticate2FA(code: string, sessionToken?: string): Observable<AuthenticateResponse> {
+
+    const endpointName = 'Authenticate2FA';
+    let param;
+    if (sessionToken) {
+      param = {
+        SessionToken: sessionToken
+      };
+    } else {
+      param = {
+        Code: code
+      };
+    }
+
+    const frame = new MessageFrame(MessageType.Request, endpointName, param);
+
+    this.prepareAndSendFrame(frame);
+
+    return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
   }
 
   /**

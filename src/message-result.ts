@@ -1,4 +1,5 @@
 import { ActionType, InstrumentType, MarketPriceDirection, ProductType, SessionStatus, Side, OrderType, SideResponse, OrderStateResponse, ChangeReasonResponse, SendOrderStatusResponse, OrderTypeResponse, DepositStatusResponse } from './message-enums';
+import { window } from 'rxjs/operators';
 
 export interface GenericResponse {
 
@@ -58,6 +59,7 @@ export interface AccountFeesResponse {
   OMSId: number;
   AccountId: number;
 }
+
 export interface AuthenticateResponse {
   Authenticated: boolean;
   SessionToken: string;
@@ -1441,6 +1443,7 @@ export interface AllWithdrawTicketsResult {
    * @memberof AllWithdrawTicketsResult
    */
   TemplateType: string;
+
   /**
    * 
    * @type {string}
