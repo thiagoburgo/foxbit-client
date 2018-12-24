@@ -1,4 +1,4 @@
-import { ActionType, InstrumentType, MarketPriceDirection, ProductType, SessionStatus, Side, OrderType, SideResponse, OrderStateResponse, ChangeReasonResponse, SendOrderStatusResponse, OrderTypeResponse, DepositStatusResponse } from './message-enums';
+import { ActionType, InstrumentType, MarketPriceDirection, ProductType, SessionStatus, Side, OrderType, SideResponse, OrderStateResponse, ChangeReasonResponse, SendOrderStatusResponse, OrderTypeResponse, DepositStatusResponse, WithdrawStatus } from './message-enums';
 import { window } from 'rxjs/operators';
 
 export interface GenericResponse {
@@ -99,8 +99,8 @@ export interface ProductResponse {
 export interface L2SnapshotResponse {
   MDUpdateID: number;
   Accounts: number;
-  ActionDateTime: string;
-  ActionType: number;
+  ActionDateTime: number;
+  ActionType: ActionType;
   LastTradePrice: number;
   Orders: number;
   Price: number;
@@ -1435,6 +1435,7 @@ export interface AllWithdrawTicketsResult {
    * @memberof AllWithdrawTicketsResult
    */
   TemplateForm: any;
+
   /**
    * The name of the template being used. The template controls the string/value
    * pairs in the TemplateForm object returned for each withdrawal.
@@ -1445,21 +1446,23 @@ export interface AllWithdrawTicketsResult {
   TemplateType: string;
 
   /**
-   * 
+   * The name of the template being used. The template controls the string/
+   * value pairs in the TemplateForm object returned for each withdrawal. These vary
+   * by account provider
    * @type {string}
    * @memberof AllWithdrawTicketsResult
    */
   TemplateFormType: string;
+
   /**
-   *
-   *
+   * Any comment pertaining to the withdrawal
    * @type {string}
    * @memberof AllWithdrawTicketsResult
    */
   Comment: string;
+
   /**
-   *
-   *
+   * An external address supplied by the account provider to accept the withdrawal.
    * @type {string}
    * @memberof AllWithdrawTicketsResult
    */
@@ -1503,133 +1506,102 @@ export interface AllWithdrawTicketsResult {
    * @memberof AllWithdrawTicketsResult
    */
   OperatorId: number;
+
   /**
-   *
-   *
-   * @type {string}
+   * The current status of the deposit, stated as an integer. One of:
+   * - 0 New
+   * - 1 AdminProcessing
+   * - 2 Accepted
+   * - 3 Rejected
+   * - 4 SystemProcessing
+   * - 5 FullyProcessed
+   * - 6 Failed
+   * - 7 Pending
+   * - 8 Pending2Fa
+   * - 9 AutoAccepted
+   * - 10 Delayed
+   * *************************************
+   * Note: Withdraw tickets include Status values 8 through 10, which do
+   * not apply to deposit tickets. Status for GetAllWithdrawTickets and
+   * GetAllDepositTickets are numerical; other instances of Status are strings
+   * @type {WithdrawStatus}
    * @memberof AllWithdrawTicketsResult
    */
-  Status: string;
+  Status: WithdrawStatus;
+
   /**
-   *
-   *
+   * The amount of any fee that was charged for the withdrawal. FeeAmt is
+   * always denominated in the asset or product of the withdrawal, for example in US
+   * Dollars, BitCoin, or other currency, depending on the nature of the funds being
+   * withdrawn.
    * @type {number}
    * @memberof AllWithdrawTicketsResult
    */
   FeeAmt: number;
+
   /**
-   *
-   *
+   * The ID of any user who made an update to the withdraw ticket.
+   * Updates are most usually to Status.
    * @type {number}
    * @memberof AllWithdrawTicketsResult
    */
   UpdatedByUser: number;
+
   /**
-   *
-   *
+   * The name of any user who made an update to the withdraw ticket.
+   * Updates are most usually to Status
    * @type {string}
    * @memberof AllWithdrawTicketsResult
    */
   UpdatedByUserName: string;
+
   /**
-   *
-   *
+   * A system-assigned unique withdraw ticket number that identifies
+   * the withdrawal. The value for TicketNumber is returned by the Get~ calls:
+   * GetAllWithdrawTickets and GetWithdrawTicket.
    * @type {number}
    * @memberof AllWithdrawTicketsResult
    */
   TicketNumber: number;
+
   /**
-   *
-   *
+   * The time and date at which the withdraw ticket was created,
+   * in ISO 8601 format.
    * @type {string}
    * @memberof AllWithdrawTicketsResult
    */
   CreatedTimestamp: string;
+
   /**
-   *
-   *
+   * If the ticket has been updated, shows the time and date stamp of the
+   * update in ISO 8601 format; if the ticket has not been updated, shows the same
+   * time and date stamp as CreateTimestamp
    * @type {string}
    * @memberof AllWithdrawTicketsResult
    */
   LastUpdateTimestamp: string;
+
   /**
    *
    *
    * @type {Comment[]}
    * @memberof AllWithdrawTicketsResult
    */
-  Comments?: Comment[];
+  Comments?: string[];
+
   /**
-   *
-   *
+   * A set of base-64 strings usually providing an image or a PDF.
+   * This image or file may be a transaction receipt or other information that the
+   * depositor wishes to attach to the deposit for record-keeping purposes.
    * @type {string[]}
    * @memberof AllWithdrawTicketsResult
    */
   Attachments?: string[];
+
   /**
-   *
-   *
+   * Reserved for future use.
    * @type {any[]}
    * @memberof AllWithdrawTicketsResult
    */
   AuditLog?: any[];
-}
-
-export interface Comment {
-  /**
-   *
-   *
-   * @type {number}
-   * @memberof Comment
-   */
-  CommentId: number;
-  /**
-   *
-   *
-   * @type {number}
-   * @memberof Comment
-   */
-  EnteredBy: number;
-  /**
-   *
-   *
-   * @type {string}
-   * @memberof Comment
-   */
-  EnteredDateTime: string;
-  /**
-   *
-   *
-   * @type {string}
-   * @memberof Comment
-   */
-  Comment: string;
-  /**
-   *
-   *
-   * @type {number}
-   * @memberof Comment
-   */
-  OperatorId: number;
-  /**
-   *
-   *
-   * @type {number}
-   * @memberof Comment
-   */
-  OMSId: number;
-  /**
-   *
-   *
-   * @type {string}
-   * @memberof Comment
-   */
-  TicketCode: string;
-  /**
-   *
-   *
-   * @type {number}
-   * @memberof Comment
-   */
-  TicketId: number;
 }

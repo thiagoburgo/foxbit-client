@@ -131,6 +131,20 @@ export enum DepositStatus {
     Pending = 7
 }
 
+export enum WithdrawStatus {
+    New = 0,
+    AdminProcessing = 1,
+    Accepted = 2,
+    Rejected = 3,
+    SystemProcessing = 4,
+    FullyProcessed = 5,
+    Failed = 6,
+    Pending = 7,
+    Pending2Fa = 8,
+    AutoAccepted = 9,
+    Delayed = 10
+}
+
 export enum DepositStatusResponse {
     New = 'New',
     AdminProcessing = 'AdminProcessing',

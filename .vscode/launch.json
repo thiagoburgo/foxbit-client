@@ -14,7 +14,7 @@
             ]
         },
         {
-            "name": "Run mocha",
+            "name": "Run teste",
             "type": "node",
             "request": "launch",
             "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",

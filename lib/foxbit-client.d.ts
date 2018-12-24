@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
-import { AccountFeesResponse, AuthenticateResponse, GenericResponse, InstrumentResponse, L2SnapshotResponse, ProductResponse, SubscriptionL2Response, SubscriptionLevel1Response, SubscriptionTickerResponse, UserInfoResponse } from './message-result';
+import { AllDepositOrWithdrawTicketsRequest, CancelReplaceOrderRequest, OrderFeeRequest, SendOrderRequest } from './message-request';
+import { AccountFeesResponse, AccountInfoResult, AccountPositionResult, AccountTradesResult, AllDepositTicketsResult, AllWithdrawTicketsResult, AuthenticateResponse, CancelReplaceOrderResult, GenericResponse, InstrumentResponse, L2SnapshotResponse, OpenOrdersResult, OrderFeeResult, OrderHistoryResult, ProductResponse, SendOrderResult, SubscriptionL2Response, SubscriptionLevel1Response, SubscriptionTickerResponse, UserInfoResponse } from './message-result';
 export declare class FoxBitClient {
     private sequenceByMessageType;
     private endpointDescriptorByMethod;
@@ -51,7 +52,26 @@ export declare class FoxBitClient {
      * @returns {Observable<AuthenticateResponse>}
      * @memberof FoxBitClient
      */
-    logIn(username: string, password: string): Observable<AuthenticateResponse>;
+    webAuthenticateUser(username: string, password: string): Observable<AuthenticateResponse>;
+    /**
+     * Completes the second part of a two-factor authentication by sending the authentication token from
+     * the non-AlphaPoint authentication system to the Order Management System. The call returns a
+     * verification that the user logging in has been authenticated, and a token.
+     * Here is how the two-factor authentication process works:
+     *   1. Call WebAuthenticateUser. The response includes values for TwoFAType and
+     *      TwoFAToken. For example, TwoFAType may return “Google,” and the TwoFAToken then
+     *      returns a Google-appropriate token (which in this case would be a QR code).
+     *   2. Enter the TwoFAToken into the two-factor authentication program, for example, Google
+     *      Authenticator. The authentication program returns a different token.
+     *   3. Call Authenticate2FA with the token you received from the two-factor authentication
+     *      program (shown as YourCode in the request example below).
+     *
+     * @param {string} code Code holds the token obtained from the other authentication source.
+     * @param {string} [sessionToken] To send a session token to re-establish an interrupted session
+     * @returns {Observable<AuthenticateResponse>}
+     * @memberof FoxBitClient
+     */
+    authenticate2FA(code: string, sessionToken?: string): Observable<AuthenticateResponse>;
     /**
      * ResetPassword is a two-step process. The first step calls ResetPassword with the user’s username.
      * The Order Management System then sends an email to the user’s registered email address. The
@@ -327,6 +347,17 @@ export declare class FoxBitClient {
      * or a combination of them on a specific Order Management System.
      * User and account permissions govern cancellation actions.
      *
+     * | UserId 37 | AccId 14 | Instr 25 |                                    Result                                   |
+     * |:---------:|:--------:|:--------:|:---------------------------------------------------------------------------:|
+     * |     X     |     X    |     X    | Account #14 belonging to user #37 for instrument #25.                       |
+     * |     X     |     X    |          | Account #14 belonging to user #37 for all instruments.                      |
+     * |     X     |          |     X    | All accounts belonging to user #37 for instrument #25.                      |
+     * |     X     |          |          | All accounts belonging to user #37 for all instruments.                     |
+     * |           |     X    |     X    | All users of account #14 for instrument #25.                                |
+     * |           |     X    |          | All users of account #14 for all instruments.                               |
+     * |           |          |     X    | All accounts of all users for instrument #25. (requires special permission) |
+     * |           |          |          | All accounts of all users for all instruments (requires special permission) |
+     *
      * @param {number} omsId The Order Management System under which the account operates.Required
      * @param {number} [accountId] The account for which all orders are being canceled. Conditionally optional.
      * @param {number} [userId] The ID of the user whose orders are being canceled. Conditionally optional.
@@ -363,4 +394,147 @@ export declare class FoxBitClient {
      * @memberof FoxBitClient
      */
     cancelQuote(omsId: number, bidQuoteId: number, askQuoteId: number, accountId?: number, instrumentId?: number): Observable<GenericResponse>;
+    /**
+     * CancelReplaceOrder is single API call that both cancels an existing order and replaces it with a
+     * new order. Canceling one order and replacing it with another also cancels the order’s priority in
+     * the order book. You can use ModifyOrder to preserve priority in the book; but ModifyOrder only
+     * allows a reduction in order quantity.
+     * `Note: ` CancelReplaceOrder sacrifices the order’s priority in the order book.
+     * @param {CancelReplaceOrderRequest} cancelReplaceOrderReq
+     * @returns {Observable<CancelReplaceOrderResult>}
+     * @memberof FoxBitClient
+     */
+    cancelReplaceOrder(cancelReplaceOrderReq: CancelReplaceOrderRequest): Observable<CancelReplaceOrderResult>;
+    /**
+     * Returns detailed information about one specific account belonging to the authenticated user and
+     * existing on a specific Order Management System
+     *
+     * @param {number} omsId The ID of the Order Management System on which the account exists
+     * @param {number} accountId  The ID of the account on the Order Management System for which information will be returned.
+     * @param {number} accountHandle  AccountHandle is a unique user-assigned name that is checked at create
+     * time by the Order Management System. Alternate to Account ID.
+     * @returns {Observable<AccountInfoResult>}
+     * @memberof FoxBitClient
+     */
+    getAccountInfo(omsId: number, accountId: number, accountHandle: number): Observable<AccountInfoResult>;
+    /**
+     * Retrieves a list of positions (balances) for a specific user account running
+     * under a specific Order Management System.
+     * The trading day runs from UTC Midnight to UTC Midnight.
+     * @param {number} accountId  The ID of the authenticated user’s account on the Order Management
+     * System for which positions will be returned.
+     * @param {number} omsId  The ID of the Order Management System to which the user belongs.
+     * A user will belong only to one OMS.
+     * @returns {Observable<AccountPositionResult[]>}
+     * @memberof FoxBitClient
+     */
+    getAccountPositions(accountId: number, omsId: number): Observable<AccountPositionResult[]>;
+    /**
+     * Requests the details on up to `200` past trade executions for a single specific user account and its
+     * Order Management System, starting at index `i`, where `i` is an integer identifying a specific execution
+     * in reverse order; that is, the most recent execution has an index of `0`, and increments by one as trade
+     * executions recede into the past.
+     * The operator of the trading venue determines how long to retain an accessible trading history
+     * before archiving.
+     * @param {number} accountId The ID of the authenticated user’s account.
+     * @param {number} omsId The ID of the Order Management System to which the user belongs.
+     * A user will belong only to one OMS.
+     * @param {number} startIndex The starting index into the history of trades, from `0`
+     * (the most recent trade).
+     * @param {number} count The number of trades to return. The system can return up to `200` trades.
+     * @returns {Observable<AccountTradesResult>}
+     * @memberof FoxBitClient
+     */
+    getAccountTrades(accountId: number, omsId: number, startIndex: number, count: number): Observable<AccountTradesResult>;
+    /**
+     * Returns a list of transactions for a specific account on an Order Management System.
+     * The owner of the trading venue determines how long to retain order history before archiving.
+     * @param {number} accountId The ID of the account for which transactions will be returned.
+     * If not specified, the call returns transactions for the default account for the logged-in user
+     * @param {number} omsId The ID of the Order Management System from which the account’s
+     * transactions will be returned.
+     * @param {number} depth The number of transactions that will be returned, starting with
+     * the most recent transaction.
+     * @returns {Observable<AccountTradesResult[]>}
+     * @memberof FoxBitClient
+     */
+    getAccountTransactions(accountId: number, omsId: number, depth: number): Observable<AccountTradesResult[]>;
+    /**
+     * Returns an array of 0 or more orders that have not yet been filled (open orders) for a single account
+     * for a given user on a specific Order Management System. The call returns an empty array if a user
+     * has no open orders.
+     * @param {number} accountId The ID of the authenticated user’s account
+     * @param {number} omsId The ID of the Order Management System to which the user belongs.
+     * A user will belong only to one OMS.
+     * @returns {Observable<OpenOrdersResult>}
+     * @memberof FoxBitClient
+     */
+    getOpenOrders(accountId: number, omsId: number): Observable<OpenOrdersResult>;
+    /**
+     * Creates an order. Anyone submitting an order should also subscribe to the various market data and
+     * event feeds, or call GetOpenOrders or GetOrderStatus to monitor the status of the order. If the
+     * order is not in a state to be executed, GetOpenOrders will not return it.
+     * @param {SendOrderRequest} sendOrderRequest
+     * @returns {Observable<SendOrderResult>}
+     * @memberof FoxBitClient
+     */
+    sendOrder(sendOrderRequest: SendOrderRequest): Observable<SendOrderResult>;
+    /**
+     * Returns an estimate of the fee for a specific order and order type.
+     * Fees are set and calculated by the operator of the trading venue.
+     * @param {OrderFeeRequest} orderFeeRequest
+     * @returns {Observable<OrderFeeResult>}
+     * @memberof FoxBitClient
+     */
+    getOrderFee(orderFeeRequest: OrderFeeRequest): Observable<OrderFeeResult>;
+    /**
+     * Returns a complete list of all orders, both open and executed, for a specific account on the specified
+     * Order Management System.
+     * @param {number} accountId The ID of the Order Management System where the orders were placed
+     * @param {number} omsId The ID of the account whose orders will be returned
+     * @returns {Observable<OrderHistoryResult>}
+     * @memberof FoxBitClient
+     */
+    getOrderHistory(accountId: number, omsId: number): Observable<OrderHistoryResult>;
+    /**
+     * Returns all deposit tickets that match the string/value pairs included in the request, starting at a
+     * specific ticket, and returning up to a total number that can be specified in the request.
+     * @param {AllDepositOrWithdrawTicketsRequest} allDepositTicketsRequest OMSId and OperatorId are required;
+     * other string/value pairs are optional.
+     * AmountOperator must be included if an Amount value is included.
+     * @returns {Observable<AllDepositTicketsResult>}
+     * @memberof FoxBitClient
+     */
+    getAllDepositTickets(allDepositTicketsRequest: AllDepositOrWithdrawTicketsRequest): Observable<AllDepositTicketsResult[]>;
+    getAllWithdrawTickets(allWithdrawTicketsRequest: AllDepositOrWithdrawTicketsRequest): Observable<AllWithdrawTicketsResult[]>;
+    /**
+     * Returns a single deposit ticket by matching its request code to one already in the database.
+     * ************
+     * Only admin-level users can issue this call.
+     * @param {number} omsId  The ID of the Order Management System where the withdrawal was made.
+     * @param {number} operatorId  The ID of the trading venue operator on the system where
+     * the withdraw was made.
+     * @param {string} requestCode A GUID (globally unique ID) that identifies the specific withdrawal ticket
+     * you want to return. Obtain the RequestCode from **CreateWithdrawTicket** or **GetAllWithdrawTickets**.
+     * @param {number} accountId The ID of the account from which the withdrawal was made.
+     * @returns {Observable<AllWithdrawTicketsResult>}
+     * @memberof FoxBitClient
+     */
+    getDepositTicket(omsId: number, operatorId: number, requestCode: string, accountId: number): Observable<AllDepositTicketsResult>;
+    /**
+     * Returns a single withdraw ticket from the Order Management System, trading venue operator, and
+     * account that matches the GUID (globally unique identifier) in RequestCode. Obtain the GUID from
+     * the call CreateWithdrawTicket when the ticket is first created, or from GetAllWithdrawTickets,
+     * another admin-level-only call. An administrator can use GetWithdrawTicket to return any single
+     * withdrawal ticket in the system.
+     * @param {number} omsId  The ID of the Order Management System where the withdrawal was made.
+     * @param {number} operatorId  The ID of the trading venue operator on the system where
+     * the withdraw was made.
+     * @param {string} requestCode A GUID (globally unique ID) that identifies the specific withdrawal ticket
+     * you want to return. Obtain the RequestCode from **CreateWithdrawTicket** or **GetAllWithdrawTickets**.
+     * @param {number} accountId The ID of the account from which the withdrawal was made.
+     * @returns {Observable<AllWithdrawTicketsResult>}
+     * @memberof FoxBitClient
+     */
+    getWithdrawTicket(omsId: number, operatorId: number, requestCode: string, accountId: number): Observable<AllWithdrawTicketsResult>;
 }

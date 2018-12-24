@@ -1,10 +1,18 @@
-import { Observable, Subject } from 'rxjs';
+import { getUnixTime, format } from 'date-fns';
+import { Observable, of, Subject } from 'rxjs';
 import { concatMap, map } from 'rxjs/operators';
 import WebSocket from 'ws';
+
 import { EndpointMethodDescriptor, EndpointMethodReplyType, EndpointMethodType } from './api-descriptors';
+import { wsLogger } from './log-service';
 import { MessageType } from './message-enums';
 import { MessageFrame } from './message-frame';
-import { AllDepositOrWithdrawTicketsRequest, CancelReplaceOrderRequest, OrderFeeRequest, SendOrderRequest } from './message-request';
+import {
+  AllDepositOrWithdrawTicketsRequest,
+  CancelReplaceOrderRequest,
+  OrderFeeRequest,
+  SendOrderRequest,
+} from './message-request';
 import {
   AccountFeesResponse,
   AccountInfoResult,
@@ -25,8 +33,9 @@ import {
   SubscriptionL2Response,
   SubscriptionLevel1Response,
   SubscriptionTickerResponse,
-  UserInfoResponse
+  UserInfoResponse,
 } from './message-result';
+
 
 export class FoxBitClient {
 
@@ -65,6 +74,16 @@ export class FoxBitClient {
     GetDepositTicket: new EndpointMethodDescriptor(),
     GetWithdrawTicket: new EndpointMethodDescriptor(),
     // publico
+    Authenticate2FA: {
+      methodReplyType: EndpointMethodReplyType.Response,
+      methodSubject: new Subject<any>(),
+      methodType: EndpointMethodType.Public,
+    },
+    WebAuthenticateUser: {
+      methodReplyType: EndpointMethodReplyType.Response,
+      methodSubject: new Subject<any>(),
+      methodType: EndpointMethodType.Public,
+    },
     LogOut: {
       methodReplyType: EndpointMethodReplyType.Response,
       methodSubject: new Subject<any>(),
@@ -111,17 +130,19 @@ export class FoxBitClient {
       methodType: EndpointMethodType.Public,
     },
     SubscribeLevel1: {
-      methodReplyType: EndpointMethodReplyType.Response,
+      methodReplyType: EndpointMethodReplyType.ResponseAndEvent,
       methodSubject: new Subject<any>(),
       methodType: EndpointMethodType.Public,
+      associatedEvent: 'Level1UpdateEvent'
     },
     SubscribeLevel2: {
-      methodReplyType: EndpointMethodReplyType.Response,
+      methodReplyType: EndpointMethodReplyType.ResponseAndEvent,
       methodSubject: new Subject<any>(),
       methodType: EndpointMethodType.Public,
+      associatedEvent: 'Level2UpdateEvent'
     },
     SubscribeTicker: {
-      methodReplyType: EndpointMethodReplyType.Response,
+      methodReplyType: EndpointMethodReplyType.ResponseAndEvent,
       methodSubject: new Subject<any>(),
       methodType: EndpointMethodType.Public,
     },
@@ -191,6 +212,17 @@ export class FoxBitClient {
   private socket: WebSocket;
 
   constructor() {
+    // Only alias for SubscribeLevel1
+    this.endpointDescriptorByMethod['Level1UpdateEvent']
+      = this.endpointDescriptorByMethod['SubscribeLevel1'];
+
+    // Only alias for SubscribeLevel2
+    this.endpointDescriptorByMethod['Level2UpdateEvent']
+      = this.endpointDescriptorByMethod['SubscribeLevel2'];
+
+    // Only alias for SubscribeTicker
+    this.endpointDescriptorByMethod['TickerDataUpdateEvent']
+      = this.endpointDescriptorByMethod['SubscribeTicker'];
   }
 
   private connectSubject;
@@ -240,16 +272,18 @@ export class FoxBitClient {
 
   private initEventHandlers() {
     this.socket.on('open', () => {
-      // console.log('Conexão iniciada com sucesso!');
+      wsLogger.info('Conexão iniciada com sucesso!');
       this.connectSubject.next(true);
       this.connectSubject.complete();
     });
 
     this.socket.on('message', (data: any) => {
-      // console.log('Mensagem recebida (raw): ', data);
+      wsLogger.info('Mensagem recebida (raw)', data);
       const response = JSON.parse(data);
-      response.o = JSON.parse(response.o);
-      // console.log('Mensagem recebida: ', data);
+
+      response.o = response.o && JSON.parse(response.o);
+
+      wsLogger.info('Mensagem recebida (parsed)', response);
 
       const endpointDescriptorByMethod = this.endpointDescriptorByMethod[response.n];
 
@@ -270,7 +304,7 @@ export class FoxBitClient {
     });
 
     this.socket.on('error', (err: Error) => {
-      console.log('[WEBSOCKET] Error: ', err);
+      wsLogger.error('Socket error', err);
 
       this.connectSubject.error(err);
       this.connectSubject.complete();
@@ -285,7 +319,13 @@ export class FoxBitClient {
     });
 
     this.socket.on('close', (code: number, reason: string) => {
-      // console.log(`Conexão finalizada (${code}-${reason})`);
+
+      if (code > 1000) {
+        wsLogger.error('Socket closed: %d-%s', code, reason);
+      } else {
+        wsLogger.info('Socket closed normally', code, reason);
+      }
+
       for (const prop in this.endpointDescriptorByMethod) {
         if (this.endpointDescriptorByMethod.hasOwnProperty(prop)) {
           const endpointDescriptor = this.endpointDescriptorByMethod[prop];
@@ -315,9 +355,11 @@ export class FoxBitClient {
     }
   }
 
-  private prepareAndSendFrame(loginFrame: MessageFrame) {
-    this.calculateMessageFrameSequence(loginFrame);
-    const strLoginFrame = JSON.stringify(loginFrame);
+  private prepareAndSendFrame(frame: MessageFrame) {
+    this.calculateMessageFrameSequence(frame);
+    const strLoginFrame = JSON.stringify(frame);
+
+    wsLogger.info('Envio de Frame', frame);
     this.socket.send(strLoginFrame);
   }
 
@@ -335,7 +377,7 @@ export class FoxBitClient {
     return this.endpointDescriptorByMethod['LogOut'].methodSubject.pipe(
       concatMap((val) => {
         this.disconnect();
-        return val;
+        return of(val);
       }),
     );
   }
@@ -554,13 +596,81 @@ export class FoxBitClient {
       'GetL2Snapshot', {
         OMSId: omsId,
         InstrumentId: instrumentId,
-        Depth: depth,
+        Depth: depth
       });
 
     this.prepareAndSendFrame(frame);
 
-    return this.endpointDescriptorByMethod['GetL2Snapshot'].methodSubject.asObservable();
+    return this.endpointDescriptorByMethod['GetL2Snapshot'].methodSubject.pipe(
+      map((snapshots: number[][]) => {
+        const snapshotsResponse: L2SnapshotResponse[] = [];
+
+        for (const snapshot of snapshots) {
+          snapshotsResponse.push({
+            MDUpdateID: snapshot[0],
+            Accounts: snapshot[1],
+            ActionDateTime: snapshot[2],
+            ActionType: snapshot[3],
+            LastTradePrice: snapshot[4],
+            Orders: snapshot[5],
+            Price: snapshot[6],
+            ProductPairCode: snapshot[7],
+            Quantity: snapshot[8],
+            Side: snapshot[9]
+          } as L2SnapshotResponse);
+        }
+
+        return snapshotsResponse;
+      })
+    );
   }
+
+  //#region IMPLEMENTATION FOLLOWING DOCUMENTATION, BUT WRONG
+  // /**
+  //  * Requests a ticker history (high, low, open, close, volume, bid, ask, ID) of a specific instrument
+  //  * from a given date forward to the present. You will need to format the returned data per your
+  //  * requirements.
+  //  * **********************
+  //  * Endpoint Type: Public
+  //  * @param {number} instrumentId The ID of a specific instrument. The Order Management System
+  //  * and the default Account ID of the logged-in user are assumed.
+  //  * @param {Date} fromDate Oldest date from which the ticker history will start, in POSIX format
+  //  * and UTC time zone. The report moves toward the present from this point.
+  //  * @returns {Observable<SubscriptionTickerResponse[]>}
+  //  * @memberof FoxBitClient
+  //  */
+  // getTickerHistory(instrumentId: number, fromDate: Date): Observable<SubscriptionTickerResponse[]> {
+  //   const frame = new MessageFrame(MessageType.Request,
+  //     'GetTickerHistory', {
+  //       InstrumentId: instrumentId,
+  //       FromDate: getUnixTime(fromDate), // POSIX-format date and time
+  //     });
+
+  //   this.prepareAndSendFrame(frame);
+
+  //   return this.endpointDescriptorByMethod['GetTickerHistory'].methodSubject.pipe(
+  //     map((ticks: number[][]) => {
+  //       const typedTicks: SubscriptionTickerResponse[] = [];
+
+  //       for (const tick of ticks) {
+  //         typedTicks.push({
+  //           TickerDate: tick[0],
+  //           High: tick[1],
+  //           Low: tick[2],
+  //           Open: tick[3],
+  //           Close: tick[4],
+  //           Volume: tick[5],
+  //           BidPrice: tick[6],
+  //           AskPrice: tick[7],
+  //           InstrumentId: tick[8],
+  //         });
+  //       }
+
+  //       return typedTicks;
+  //     }),
+  //   );
+  // }
+  //#endregion
 
   /**
    * Requests a ticker history (high, low, open, close, volume, bid, ask, ID) of a specific instrument
@@ -568,42 +678,32 @@ export class FoxBitClient {
    * requirements.
    * **********************
    * Endpoint Type: Public
+   * @param {number} omsId The ID of the Order Management System.
    * @param {number} instrumentId The ID of a specific instrument. The Order Management System
    * and the default Account ID of the logged-in user are assumed.
-   * @param {Date} fromDate Oldest date from which the ticker history will start, in POSIX format
-   * and UTC time zone. The report moves toward the present from this point.
+   * @param {Date} fromDate Oldest date from which the ticker history will start, in 'yyyy-MM-ddThh:mm:ssZ' format.
+   * The report moves toward the present from this point.
+   * @param {Date} [toDate=new Date()]
+   * @param {number} [interval=60] Interval in minutes to consider tickers
    * @returns {Observable<SubscriptionTickerResponse[]>}
    * @memberof FoxBitClient
    */
-  getTickerHistory(instrumentId: number, fromDate: Date): Observable<SubscriptionTickerResponse[]> {
+  getTickerHistory(omsId: number, instrumentId: number, fromDate: Date, toDate: Date = new Date(), interval: number = 60)
+    : Observable<SubscriptionTickerResponse[]> {
+    // ws.send(JSON.stringify({"m":0,"i":1,"n":"GetTickerHistory","o":"{\"OMSId\":1,\"InstrumentId\":1,\"FromDate\":\"2018-12-20\",\"ToDate\":\"2018-12-21\",\"Interval\":\"60\"}"}))
     const frame = new MessageFrame(MessageType.Request,
       'GetTickerHistory', {
+        OMSId: omsId,
         InstrumentId: instrumentId,
-        FromDate: fromDate, // POSIX-format date and time
+        FromDate: format(fromDate, 'yyyy-MM-dd\'T\'hh:mm:ssZ'), // POSIX-format date and time
+        ToDate: format(toDate, 'yyyy-MM-dd\'T\'hh:mm:ssZ'),
+        Interval: interval
       });
 
     this.prepareAndSendFrame(frame);
 
     return this.endpointDescriptorByMethod['GetTickerHistory'].methodSubject.pipe(
-      map((ticks: number[]) => {
-        const typedTicks: SubscriptionTickerResponse[] = [];
-
-        for (const tick of ticks) {
-          typedTicks.push({
-            TickerDate: tick[0],
-            High: tick[1],
-            Low: tick[2],
-            Open: tick[3],
-            Close: tick[4],
-            Volume: tick[5],
-            BidPrice: tick[6],
-            AskPrice: tick[7],
-            InstrumentId: tick[8],
-          });
-        }
-
-        return typedTicks;
-      }),
+      map(this.mapTicker)
     );
   }
 
@@ -635,7 +735,7 @@ export class FoxBitClient {
       };
     }
 
-    const frame = new MessageFrame(MessageType.Subscribe, 'SubscribeLevel1', param);
+    const frame = new MessageFrame(MessageType.Request, 'SubscribeLevel1', param);
 
     this.prepareAndSendFrame(frame);
 
@@ -653,12 +753,12 @@ export class FoxBitClient {
    * @param {number} omsId The ID of the Order Management System on which the instrument trades.
    * @param {(number | string)} instrumentIdOrSymbol The ID of the instrument you’re tracking
    * or The symbol of the instrument you’re tracking
-   * @param {number} depth Depth in this call is “depth of market,” the number of buyers and sellers at greater or lesser prices in
+   * @param {number} depth Depth in this call is “depth of market”, the number of buyers and sellers at greater or lesser prices in
    * the order book for the instrument.
    * @returns {Observable<SubscriptionL2Response>}
    * @memberof FoxBitClient
    */
-  subscribeLevel2(omsId: number, instrumentIdOrSymbol: number | string, depth: number): Observable<SubscriptionL2Response> {
+  subscribeLevel2(omsId: number, instrumentIdOrSymbol: number | string, depth: number = 300): Observable<SubscriptionL2Response[]> {
     let param;
     if (typeof instrumentIdOrSymbol === 'number') {
       param = {
@@ -674,7 +774,7 @@ export class FoxBitClient {
       };
     }
 
-    const frame = new MessageFrame(MessageType.Subscribe, 'SubscribeLevel2', param);
+    const frame = new MessageFrame(MessageType.Request, 'SubscribeLevel2', param);
 
     this.prepareAndSendFrame(frame);
 
@@ -696,18 +796,40 @@ export class FoxBitClient {
    * @memberof FoxBitClient
    */
   subscribeTicker(omsId: number, instrumentId: number, interval: number = 60, includeLastCount: number = 100)
-    : Observable<SubscriptionTickerResponse> {
+    : Observable<SubscriptionTickerResponse[]> {
     const param = {
       OMSId: omsId,
       InstrumentId: instrumentId,
       Interval: interval,
       IncludeLastCount: includeLastCount,
     };
-    const frame = new MessageFrame(MessageType.Subscribe, 'SubscribeTicker', param);
+    const frame = new MessageFrame(MessageType.Request, 'SubscribeTicker', param);
 
     this.prepareAndSendFrame(frame);
 
-    return this.endpointDescriptorByMethod['SubscribeTicker'].methodSubject.asObservable();
+    return this.endpointDescriptorByMethod['SubscribeTicker'].methodSubject.pipe(
+      map(this.mapTicker)
+    );
+  }
+
+  private mapTicker = (ticks: number[][]) => {
+    const typedTicks: SubscriptionTickerResponse[] = [];
+
+    for (const tick of ticks) {
+      typedTicks.push({
+        TickerDate: tick[0],
+        High: tick[1],
+        Low: tick[2],
+        Open: tick[3],
+        Close: tick[4],
+        Volume: tick[5],
+        BidPrice: tick[6],
+        AskPrice: tick[7],
+        InstrumentId: tick[8],
+      });
+    }
+
+    return typedTicks;
   }
 
   /**
@@ -725,7 +847,7 @@ export class FoxBitClient {
       OMSId: omsId,
       InstrumentId: instrumentId,
     };
-    const frame = new MessageFrame(MessageType.Subscribe, 'UnsubscribeLevel1', param);
+    const frame = new MessageFrame(MessageType.Request, 'UnsubscribeLevel1', param);
 
     this.prepareAndSendFrame(frame);
 
@@ -747,7 +869,7 @@ export class FoxBitClient {
       OMSId: omsId,
       InstrumentId: instrumentId,
     };
-    const frame = new MessageFrame(MessageType.Subscribe, 'UnsubscribeLevel2', param);
+    const frame = new MessageFrame(MessageType.Request, 'UnsubscribeLevel2', param);
 
     this.prepareAndSendFrame(frame);
 
@@ -769,7 +891,7 @@ export class FoxBitClient {
       OMSId: omsId,
       InstrumentId: instrumentId,
     };
-    const frame = new MessageFrame(MessageType.Subscribe, 'UnsubscribeTicker', param);
+    const frame = new MessageFrame(MessageType.Request, 'UnsubscribeTicker', param);
 
     this.prepareAndSendFrame(frame);
 
@@ -779,6 +901,9 @@ export class FoxBitClient {
   // ============== Private Endpoints ================
 
   /**
+   * ************************** 
+   * API returns 'Endpoint not found'
+   * **************************
    * Retrieves a comma-separated array of all permissions that can be assigned to a user.
    * An administrator or superuser can set permissions for each user on an API-call by API-call
    * basis, to allow for highly granular control. Common permission sets include Trading, Deposit,
@@ -790,15 +915,15 @@ export class FoxBitClient {
    * @returns {Observable<string[]>}
    * @memberof FoxBitClient
    */
-  getAvailablePermissionList(): Observable<string[]> {
-    const endpointName = 'GetAvailablePermissionList';
-    const param = {};
-    const frame = new MessageFrame(MessageType.Request, endpointName, param);
+  // getAvailablePermissionList(): Observable<string[]> {
+  //   const endpointName = 'GetAvailablePermissionList';
+  //   const param = {};
+  //   const frame = new MessageFrame(MessageType.Request, endpointName, param);
 
-    this.prepareAndSendFrame(frame);
+  //   this.prepareAndSendFrame(frame);
 
-    return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
-  }
+  //   return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
+  // }
 
   /**
    * **GetUserConfig** returns the list of key/value pairs set by the **SetUserConfig** call and associated with
