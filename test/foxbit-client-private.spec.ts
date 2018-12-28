@@ -65,7 +65,7 @@ describe('# Client FoxBit - Private Api', function () {
 
   it('GetOrderFee must return data', (done) => {
     client.getOrderFee({
-      AccountId: accountId, 
+      AccountId: accountId,
       OMSId: omsId,
       InstrumentId: 1, //BTCBRL
       MakerTaker: MakerTaker.Maker,
@@ -74,8 +74,9 @@ describe('# Client FoxBit - Private Api', function () {
       Price: 10000,
       ProductId: 1
     }).subscribe((orderFee) => {
-      orderFee.OrderFee
-      expect(accountFees, 'Account fees cannot be empty').to.not.be.empty;
+      expect(orderFee.ProductId, 'ProductId in OrderFee must be great then "0" (ZERO)').to.be.gt(0);
+      expect(orderFee.OrderFee, 'Order fee cannot be null').to.not.be.null;
+      expect(orderFee.OrderFee, 'Order fee must be >= 0 (ZERO)').to.be.gte(0);
       done();
     }, (err) => done(err));
   });
