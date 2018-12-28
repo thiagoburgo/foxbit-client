@@ -14,7 +14,8 @@
     "preversion": "npm run lint",
     "version": "npm run format && git add -A src",
     "postversion": "git push && git push --tags",
-    "test": "mocha --require ts-node/register test/**/*.ts"
+    "test-debug": "cross-env LOG_ENABLED=true mocha --require ts-node/register test/**/*.ts",
+    "test": "cross-env LOG_ENABLED=false mocha --require ts-node/register test/**/*.ts"
   },
   "repository": {
     "type": "git",
