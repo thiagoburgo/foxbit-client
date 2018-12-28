@@ -79,9 +79,9 @@ export enum OrderType {
 }
 
 export enum MakerTaker {
-    Unknown = 0,
-    Maker = 1,
-    Taker = 2
+    Unknown = 'Unknown',
+    Maker = 'Maker',
+    Taker = 'Taker'
 }
 
 export enum OrderTypeResponse {
