@@ -69,9 +69,9 @@ export declare enum OrderType {
     BlockTrade = 7
 }
 export declare enum MakerTaker {
-    Unknown = 0,
-    Maker = 1,
-    Taker = 2
+    Unknown = "Unknown",
+    Maker = "Maker",
+    Taker = "Taker"
 }
 export declare enum OrderTypeResponse {
     Unknown = "Unknown",

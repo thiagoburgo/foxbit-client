@@ -1,2 +1,3 @@
-export declare const logger: import("winston").Logger;
-export declare const wsLogger: import("winston").Logger;
+import { Logger } from 'winston';
+export declare const logger: Logger;
+export declare const wsLogger: Logger;
