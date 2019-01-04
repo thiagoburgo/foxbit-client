@@ -39,7 +39,6 @@ import {
 } from './message-result';
 
 export class FoxBitClient {
-
   private sequenceByMessageType: { [messageType: number]: number } = {
     0: 0,
     1: 0,
@@ -134,13 +133,13 @@ export class FoxBitClient {
       methodReplyType: EndpointMethodReplyType.ResponseAndEvent,
       methodSubject: new Subject<any>(),
       methodType: EndpointMethodType.Public,
-      associatedEvent: 'Level1UpdateEvent'
+      associatedEvent: 'Level1UpdateEvent',
     },
     SubscribeLevel2: {
       methodReplyType: EndpointMethodReplyType.ResponseAndEvent,
       methodSubject: new Subject<any>(),
       methodType: EndpointMethodType.Public,
-      associatedEvent: 'Level2UpdateEvent'
+      associatedEvent: 'Level2UpdateEvent',
     },
     SubscribeTicker: {
       methodReplyType: EndpointMethodReplyType.ResponseAndEvent,
@@ -219,19 +218,15 @@ export class FoxBitClient {
 
   constructor() {
     // Only alias for SubscribeLevel1
-    this.endpointDescriptorByMethod['Level1UpdateEvent']
-      = this.endpointDescriptorByMethod['SubscribeLevel1'];
+    this.endpointDescriptorByMethod['Level1UpdateEvent'] = this.endpointDescriptorByMethod['SubscribeLevel1'];
 
     // Only alias for SubscribeLevel2
-    this.endpointDescriptorByMethod['Level2UpdateEvent']
-      = this.endpointDescriptorByMethod['SubscribeLevel2'];
+    this.endpointDescriptorByMethod['Level2UpdateEvent'] = this.endpointDescriptorByMethod['SubscribeLevel2'];
 
     // Only alias for SubscribeTicker
-    this.endpointDescriptorByMethod['TickerDataUpdateEvent']
-      = this.endpointDescriptorByMethod['SubscribeTicker'];
+    this.endpointDescriptorByMethod['TickerDataUpdateEvent'] = this.endpointDescriptorByMethod['SubscribeTicker'];
 
-    this.endpointDescriptorByMethod['TradeDataUpdateEvent']
-      = this.endpointDescriptorByMethod['SubscribeTrades'];
+    this.endpointDescriptorByMethod['TradeDataUpdateEvent'] = this.endpointDescriptorByMethod['SubscribeTrades'];
   }
 
   private connectSubject;
@@ -249,14 +244,13 @@ export class FoxBitClient {
       const logEnabled = process.env.LOG_ENABLED === 'true';
       this.socket = new ReconnectingWebSocket(url, [], {
         WebSocket,
-        debug: logEnabled
+        debug: logEnabled,
       });
 
       this.initEventHandlers();
     } catch (err) {
       this.connectSubject.error(err);
       this.connectSubject.complete();
-
     }
 
     return this.connectSubject.asObservable();
@@ -285,7 +279,6 @@ export class FoxBitClient {
   }
 
   private initEventHandlers() {
-
     this.socket.addEventListener('open', () => {
       wsLogger.info('Conexão iniciada com sucesso!');
       this.connectSubject.next(true);
@@ -304,11 +297,12 @@ export class FoxBitClient {
 
       const endpointDescriptorByMethod = this.endpointDescriptorByMethod[response.n];
 
-      if (response.o.hasOwnProperty('errorcode')
-        && response.o.hasOwnProperty('result')
-        && response.o.errorcode) { // GenericResponse
+      if (response.o.hasOwnProperty('errorcode') && response.o.hasOwnProperty('result') && response.o.errorcode) {
+        // GenericResponse
         const err = response.o;
-        endpointDescriptorByMethod.methodSubject.error(new Error(`${response.o.errorcode} - ${err.errormsg}. ${err.detail}`));
+        endpointDescriptorByMethod.methodSubject.error(
+          new Error(`${response.o.errorcode} - ${err.errormsg}. ${err.detail}`),
+        );
         endpointDescriptorByMethod.methodSubject.complete();
       } else {
         endpointDescriptorByMethod.methodSubject.next(response.o);
@@ -318,7 +312,6 @@ export class FoxBitClient {
         endpointDescriptorByMethod.methodSubject.complete();
         endpointDescriptorByMethod.methodSubject = new Subject<any>();
       }
-
     });
 
     this.socket.addEventListener('error', (err: ErrorEvent) => {
@@ -395,7 +388,7 @@ export class FoxBitClient {
     this.prepareAndSendFrame(frame);
 
     return this.endpointDescriptorByMethod['LogOut'].methodSubject.pipe(
-      concatMap((val) => {
+      concatMap(val => {
         this.disconnect();
         return of(val);
       }),
@@ -415,12 +408,10 @@ export class FoxBitClient {
    * @memberof FoxBitClient
    */
   webAuthenticateUser(username: string, password: string): Observable<AuthenticateResponse> {
-    const frame = new MessageFrame(MessageType.Request,
-      'WebAuthenticateUser',
-      {
-        Username: username,
-        Password: password,
-      });
+    const frame = new MessageFrame(MessageType.Request, 'WebAuthenticateUser', {
+      Username: username,
+      Password: password,
+    });
 
     this.prepareAndSendFrame(frame);
 
@@ -446,16 +437,15 @@ export class FoxBitClient {
    * @memberof FoxBitClient
    */
   authenticate2FA(code: string, sessionToken?: string): Observable<AuthenticateResponse> {
-
     const endpointName = 'Authenticate2FA';
     let param;
     if (sessionToken) {
       param = {
-        SessionToken: sessionToken
+        SessionToken: sessionToken,
       };
     } else {
       param = {
-        Code: code
+        Code: code,
       };
     }
 
@@ -478,11 +468,9 @@ export class FoxBitClient {
    * @memberof FoxBitClient
    */
   resetPassword(username: string): Observable<GenericResponse> {
-    const frame = new MessageFrame(MessageType.Request,
-      'ResetPassword',
-      {
-        UserName: username,
-      });
+    const frame = new MessageFrame(MessageType.Request, 'ResetPassword', {
+      UserName: username,
+    });
 
     this.prepareAndSendFrame(frame);
 
@@ -499,12 +487,10 @@ export class FoxBitClient {
    * @memberof FoxBitClient
    */
   getAccountFees(accountId: number, omsId: number): Observable<AccountFeesResponse[]> {
-    const frame = new MessageFrame(MessageType.Request,
-      'GetAccountFees',
-      {
-        AccountId: accountId,
-        OMSId: omsId,
-      });
+    const frame = new MessageFrame(MessageType.Request, 'GetAccountFees', {
+      AccountId: accountId,
+      OMSId: omsId,
+    });
 
     this.prepareAndSendFrame(frame);
 
@@ -523,11 +509,10 @@ export class FoxBitClient {
    * @memberof FoxBitClient
    */
   getProduct(omsId: number, productId: number): Observable<ProductResponse> {
-    const frame = new MessageFrame(MessageType.Request,
-      'GetProduct', {
-        OMSId: omsId,
-        ProductId: productId,
-      });
+    const frame = new MessageFrame(MessageType.Request, 'GetProduct', {
+      OMSId: omsId,
+      ProductId: productId,
+    });
 
     this.prepareAndSendFrame(frame);
 
@@ -546,11 +531,10 @@ export class FoxBitClient {
    * @memberof FoxBitClient
    */
   getInstrument(omsId: number, instrumentId: number): Observable<InstrumentResponse> {
-    const frame = new MessageFrame(MessageType.Request,
-      'GetInstrument', {
-        OMSId: omsId,
-        InstrumentId: instrumentId,
-      });
+    const frame = new MessageFrame(MessageType.Request, 'GetInstrument', {
+      OMSId: omsId,
+      InstrumentId: instrumentId,
+    });
 
     this.prepareAndSendFrame(frame);
 
@@ -568,10 +552,9 @@ export class FoxBitClient {
    * @memberof FoxBitClient
    */
   getInstruments(omsId: number): Observable<InstrumentResponse[]> {
-    const frame = new MessageFrame(MessageType.Request,
-      'GetInstruments', {
-        OMSId: omsId,
-      });
+    const frame = new MessageFrame(MessageType.Request, 'GetInstruments', {
+      OMSId: omsId,
+    });
 
     this.prepareAndSendFrame(frame);
 
@@ -588,10 +571,9 @@ export class FoxBitClient {
    * @memberof FoxBitClient
    */
   getProducts(omsId: number): Observable<ProductResponse[]> {
-    const frame = new MessageFrame(MessageType.Request,
-      'GetProducts', {
-        OMSId: omsId,
-      });
+    const frame = new MessageFrame(MessageType.Request, 'GetProducts', {
+      OMSId: omsId,
+    });
 
     this.prepareAndSendFrame(frame);
 
@@ -611,13 +593,11 @@ export class FoxBitClient {
    * @memberof FoxBitClient
    */
   getL2Snapshot(omsId: number, instrumentId: number, depth: number = 100): Observable<L2SnapshotResponse[]> {
-
-    const frame = new MessageFrame(MessageType.Request,
-      'GetL2Snapshot', {
-        OMSId: omsId,
-        InstrumentId: instrumentId,
-        Depth: depth
-      });
+    const frame = new MessageFrame(MessageType.Request, 'GetL2Snapshot', {
+      OMSId: omsId,
+      InstrumentId: instrumentId,
+      Depth: depth,
+    });
 
     this.prepareAndSendFrame(frame);
 
@@ -636,12 +616,12 @@ export class FoxBitClient {
             Price: snapshot[6],
             ProductPairCode: snapshot[7],
             Quantity: snapshot[8],
-            Side: snapshot[9]
+            Side: snapshot[9],
           });
         }
 
         return snapshotsResponse;
-      })
+      }),
     );
   }
 
@@ -708,22 +688,24 @@ export class FoxBitClient {
    * @returns {Observable<SubscriptionTickerResponse[]>}
    * @memberof FoxBitClient
    */
-  getTickerHistory(omsId: number, instrumentId: number, fromDate: Date, toDate: Date = new Date(), interval: number = 60)
-    : Observable<SubscriptionTickerResponse[]> {
-    const frame = new MessageFrame(MessageType.Request,
-      'GetTickerHistory', {
-        OMSId: omsId,
-        InstrumentId: instrumentId,
-        FromDate: format(fromDate, 'yyyy-MM-dd\'T\'hh:mm:ssZ'), // POSIX-format date and time
-        ToDate: format(toDate, 'yyyy-MM-dd\'T\'hh:mm:ssZ'),
-        Interval: interval
-      });
+  getTickerHistory(
+    omsId: number,
+    instrumentId: number,
+    fromDate: Date,
+    toDate: Date = new Date(),
+    interval: number = 60,
+  ): Observable<SubscriptionTickerResponse[]> {
+    const frame = new MessageFrame(MessageType.Request, 'GetTickerHistory', {
+      OMSId: omsId,
+      InstrumentId: instrumentId,
+      FromDate: format(fromDate, "yyyy-MM-dd'T'hh:mm:ssZ"), // POSIX-format date and time
+      ToDate: format(toDate, "yyyy-MM-dd'T'hh:mm:ssZ"),
+      Interval: interval,
+    });
 
     this.prepareAndSendFrame(frame);
 
-    return this.endpointDescriptorByMethod['GetTickerHistory'].methodSubject.pipe(
-      map(this.mapTicker)
-    );
+    return this.endpointDescriptorByMethod['GetTickerHistory'].methodSubject.pipe(map(this.mapTicker));
   }
 
   /**
@@ -777,7 +759,11 @@ export class FoxBitClient {
    * @returns {Observable<SubscriptionL2Response>}
    * @memberof FoxBitClient
    */
-  subscribeLevel2(omsId: number, instrumentIdOrSymbol: number | string, depth: number = 300): Observable<SubscriptionL2Response[]> {
+  subscribeLevel2(
+    omsId: number,
+    instrumentIdOrSymbol: number | string,
+    depth: number = 300,
+  ): Observable<SubscriptionL2Response[]> {
     let param;
     if (typeof instrumentIdOrSymbol === 'number') {
       param = {
@@ -814,8 +800,12 @@ export class FoxBitClient {
    * @returns {Observable<SubscriptionTickerResponse>}
    * @memberof FoxBitClient
    */
-  subscribeTicker(omsId: number, instrumentId: number, interval: number = 60, includeLastCount: number = 100)
-    : Observable<SubscriptionTickerResponse[]> {
+  subscribeTicker(
+    omsId: number,
+    instrumentId: number,
+    interval: number = 60,
+    includeLastCount: number = 100,
+  ): Observable<SubscriptionTickerResponse[]> {
     const param = {
       OMSId: omsId,
       InstrumentId: instrumentId,
@@ -826,9 +816,7 @@ export class FoxBitClient {
 
     this.prepareAndSendFrame(frame);
 
-    return this.endpointDescriptorByMethod['SubscribeTicker'].methodSubject.pipe(
-      map(this.mapTicker)
-    );
+    return this.endpointDescriptorByMethod['SubscribeTicker'].methodSubject.pipe(map(this.mapTicker));
   }
 
   private mapTicker = (ticks: number[][]) => {
@@ -849,7 +837,7 @@ export class FoxBitClient {
     }
 
     return typedTicks;
-  }
+  };
 
   /**
    * Unsubscribes the user from a Level 1 Market Data Feed subscription..
@@ -952,7 +940,7 @@ export class FoxBitClient {
    * @returns {Observable<Array<{ Key: string, Value: string }>>}
    * @memberof FoxBitClient
    */
-  getUserConfig(): Observable<Array<{ Key: string, Value: string }>> {
+  getUserConfig(): Observable<Array<{ Key: string; Value: string }>> {
     const endpointName = 'GetUserConfig';
     const param = {};
     const frame = new MessageFrame(MessageType.Request, endpointName, param);
@@ -1044,7 +1032,11 @@ export class FoxBitClient {
    * @returns {Observable<GenericResponse>}
    * @memberof FoxBitClient
    */
-  setUserConfig(userId: number, userName: string, config: Array<{ Key: string, Value: string }>): Observable<GenericResponse> {
+  setUserConfig(
+    userId: number,
+    userName: string,
+    config: Array<{ Key: string; Value: string }>,
+  ): Observable<GenericResponse> {
     const endpointName = 'SetUserConfig';
     const param = {
       UserId: userId,
@@ -1079,9 +1071,14 @@ export class FoxBitClient {
    * @memberof FoxBitClient
    */
   setUserInfo(
-    userId: number, userName: string, password: string, email: string,
-    emailVerified: boolean, accountId: number, use2FA: boolean): Observable<UserInfoResponse> {
-
+    userId: number,
+    userName: string,
+    password: string,
+    email: string,
+    emailVerified: boolean,
+    accountId: number,
+    use2FA: boolean,
+  ): Observable<UserInfoResponse> {
     const endpointName = 'SetUserInfo';
     const param = {
       UserId: userId,
@@ -1123,8 +1120,12 @@ export class FoxBitClient {
    * @returns {Observable<UserInfoResponse>}
    * @memberof FoxBitClient
    */
-  cancelAllOrders(omsId: number, accountId?: number, userId?: number, instrumentId?: number): Observable<GenericResponse> {
-
+  cancelAllOrders(
+    omsId: number,
+    accountId?: number,
+    userId?: number,
+    instrumentId?: number,
+  ): Observable<GenericResponse> {
     const endpointName = 'CancelAllOrders';
     const param = {
       UserId: userId,
@@ -1152,14 +1153,18 @@ export class FoxBitClient {
    * @returns {Observable<UserInfoResponse>}
    * @memberof FoxBitClient
    */
-  cancelOrder(omsId: number, accountId?: number, orderId?: number, clientOrderId: number = null): Observable<GenericResponse> {
-
+  cancelOrder(
+    omsId: number,
+    accountId?: number,
+    orderId?: number,
+    clientOrderId: number = null,
+  ): Observable<GenericResponse> {
     const endpointName = 'CancelOrder';
 
     const param: any = {
       OMSId: omsId,
       AccountId: accountId,
-      OrderId: orderId
+      OrderId: orderId,
     };
 
     if (clientOrderId != null) {
@@ -1186,16 +1191,20 @@ export class FoxBitClient {
    * @returns {Observable<GenericResponse>}
    * @memberof FoxBitClient
    */
-  cancelQuote(omsId: number, bidQuoteId: number, askQuoteId: number, accountId?: number, instrumentId?: number)
-    : Observable<GenericResponse> {
-
+  cancelQuote(
+    omsId: number,
+    bidQuoteId: number,
+    askQuoteId: number,
+    accountId?: number,
+    instrumentId?: number,
+  ): Observable<GenericResponse> {
     const endpointName = 'CancelQuote';
     const param = {
       OMSId: omsId,
       BidQuoteId: bidQuoteId,
       AskQuoteId: askQuoteId,
       AccountId: accountId,
-      InstrumentId: instrumentId
+      InstrumentId: instrumentId,
     };
 
     const frame = new MessageFrame(MessageType.Request, endpointName, param);
@@ -1216,7 +1225,6 @@ export class FoxBitClient {
    * @memberof FoxBitClient
    */
   cancelReplaceOrder(cancelReplaceOrderReq: CancelReplaceOrderRequest): Observable<CancelReplaceOrderResult> {
-
     const endpointName = 'CancelReplaceOrder';
 
     const frame = new MessageFrame(MessageType.Request, endpointName, cancelReplaceOrderReq);
@@ -1243,7 +1251,7 @@ export class FoxBitClient {
     const param = {
       OMSId: omsId,
       AccountId: accountId,
-      AccountHandle: accountHandle
+      AccountHandle: accountHandle,
     };
 
     const frame = new MessageFrame(MessageType.Request, endpointName, param);
@@ -1269,7 +1277,7 @@ export class FoxBitClient {
 
     const param = {
       OMSId: omsId,
-      AccountId: accountId
+      AccountId: accountId,
     };
 
     const frame = new MessageFrame(MessageType.Request, endpointName, param);
@@ -1295,14 +1303,19 @@ export class FoxBitClient {
    * @returns {Observable<AccountTradesResult>}
    * @memberof FoxBitClient
    */
-  getAccountTrades(accountId: number, omsId: number, startIndex: number, count: number): Observable<AccountTradesResult[]> {
+  getAccountTrades(
+    accountId: number,
+    omsId: number,
+    startIndex: number,
+    count: number,
+  ): Observable<AccountTradesResult[]> {
     const endpointName = 'GetAccountTrades';
 
     const param = {
       OMSId: omsId,
       AccountId: accountId,
       StartIndex: startIndex,
-      Count: count
+      Count: count,
     };
 
     const frame = new MessageFrame(MessageType.Request, endpointName, param);
@@ -1330,7 +1343,7 @@ export class FoxBitClient {
     const param = {
       OMSId: omsId,
       AccountId: accountId,
-      Depth: depth
+      Depth: depth,
     };
 
     const frame = new MessageFrame(MessageType.Request, endpointName, param);
@@ -1355,7 +1368,7 @@ export class FoxBitClient {
 
     const param = {
       OMSId: omsId,
-      AccountId: accountId
+      AccountId: accountId,
     };
 
     const frame = new MessageFrame(MessageType.Request, endpointName, param);
@@ -1413,7 +1426,7 @@ export class FoxBitClient {
 
     const param = {
       OMSId: omsId,
-      AccountId: accountId
+      AccountId: accountId,
     };
 
     const frame = new MessageFrame(MessageType.Request, endpointName, param);
@@ -1432,7 +1445,9 @@ export class FoxBitClient {
    * @returns {Observable<AllDepositTicketsResult>}
    * @memberof FoxBitClient
    */
-  getAllDepositTickets(allDepositTicketsRequest: AllDepositOrWithdrawTicketsRequest): Observable<AllDepositTicketsResult[]> {
+  getAllDepositTickets(
+    allDepositTicketsRequest: AllDepositOrWithdrawTicketsRequest,
+  ): Observable<AllDepositTicketsResult[]> {
     const endpointName = 'GetAllDepositTickets';
 
     const frame = new MessageFrame(MessageType.Request, endpointName, allDepositTicketsRequest);
@@ -1442,7 +1457,9 @@ export class FoxBitClient {
     return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
   }
 
-  getAllWithdrawTickets(allWithdrawTicketsRequest: AllDepositOrWithdrawTicketsRequest): Observable<AllWithdrawTicketsResult[]> {
+  getAllWithdrawTickets(
+    allWithdrawTicketsRequest: AllDepositOrWithdrawTicketsRequest,
+  ): Observable<AllWithdrawTicketsResult[]> {
     const endpointName = 'GetAllWithdrawTickets';
 
     const frame = new MessageFrame(MessageType.Request, endpointName, allWithdrawTicketsRequest);
@@ -1465,14 +1482,19 @@ export class FoxBitClient {
    * @returns {Observable<AllWithdrawTicketsResult>}
    * @memberof FoxBitClient
    */
-  getDepositTicket(omsId: number, operatorId: number, requestCode: string, accountId: number): Observable<AllDepositTicketsResult> {
+  getDepositTicket(
+    omsId: number,
+    operatorId: number,
+    requestCode: string,
+    accountId: number,
+  ): Observable<AllDepositTicketsResult> {
     const endpointName = 'GetDepositTicket';
 
     const param = {
       OMSId: omsId,
       OperatorId: operatorId,
       RequestCode: requestCode,
-      AccountId: accountId
+      AccountId: accountId,
     };
 
     const frame = new MessageFrame(MessageType.Request, endpointName, param);
@@ -1497,14 +1519,19 @@ export class FoxBitClient {
    * @returns {Observable<AllWithdrawTicketsResult>}
    * @memberof FoxBitClient
    */
-  getWithdrawTicket(omsId: number, operatorId: number, requestCode: string, accountId: number): Observable<AllWithdrawTicketsResult> {
+  getWithdrawTicket(
+    omsId: number,
+    operatorId: number,
+    requestCode: string,
+    accountId: number,
+  ): Observable<AllWithdrawTicketsResult> {
     const endpointName = 'GetWithdrawTicket';
 
     const param = {
       OMSId: omsId,
       OperatorId: operatorId,
       RequestCode: requestCode,
-      AccountId: accountId
+      AccountId: accountId,
     };
 
     const frame = new MessageFrame(MessageType.Request, endpointName, param);
@@ -1526,7 +1553,11 @@ export class FoxBitClient {
    * @returns {Observable<SubscriptionTradesResponse[]>}
    * @memberof FoxBitClient
    */
-  subscribeTrades(omsId: number, instrumentId: number, includeLastCount: number = 100): Observable<SubscriptionTradesResponse[]> {
+  subscribeTrades(
+    omsId: number,
+    instrumentId: number,
+    includeLastCount: number = 100,
+  ): Observable<SubscriptionTradesResponse[]> {
     const endpointName = 'SubscribeTrades';
     const param = {
       OMSId: omsId,
@@ -1554,12 +1585,12 @@ export class FoxBitClient {
             Direction: snapshot[7],
             TakerSide: snapshot[8],
             BlockTrade: !!snapshot[9],
-            Order1or2ClientId: snapshot[10]
+            Order1or2ClientId: snapshot[10],
           });
         }
 
         return tradesResponse;
-      })
+      }),
     );
   }
 
@@ -1567,7 +1598,7 @@ export class FoxBitClient {
     const endpointName = 'UnsubscribeTrades';
     const param = {
       OMSId: omsId,
-      InstrumentId: instrumentId
+      InstrumentId: instrumentId,
     };
 
     const frame = new MessageFrame(MessageType.Request, endpointName, param);
@@ -1576,5 +1607,4 @@ export class FoxBitClient {
 
     return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
   }
-
 }

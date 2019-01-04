@@ -16,7 +16,6 @@ import {
 } from './message-enums';
 
 export interface GenericResponse {
-
   /**
    * If the call has been successfully received by the Order Management System,
    * result is true; otherwise, it is false.
@@ -186,7 +185,6 @@ export interface SubscriptionTradesResponse {
 }
 
 export interface UserInfoResponse {
-
   /**
    * ID number of the user whose information is being set.
    *
@@ -951,7 +949,6 @@ export interface OpenOrdersResult {
 }
 
 export interface SendOrderResult {
-
   /**
    * If the order is accepted by the system, it returns 0.
    * - 0 Accepted

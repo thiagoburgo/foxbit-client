@@ -1,7 +1,6 @@
 import { MessageType } from './message-enums';
 
 export class MessageFrame {
-
   public sequence: number;
 
   public payload?: any;
@@ -10,9 +9,7 @@ export class MessageFrame {
 
   public messageType: MessageType;
 
-  constructor(messageType: MessageType,
-              functionName: string,
-              payload?: any) {
+  constructor(messageType: MessageType, functionName: string, payload?: any) {
     this.messageType = messageType;
     this.functionName = functionName;
     this.payload = payload;
