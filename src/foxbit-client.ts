@@ -35,6 +35,7 @@ import {
   SubscriptionLevel1Response,
   SubscriptionTickerResponse,
   UserInfoResponse,
+  SubscriptionTradesResponse,
 } from './message-result';
 
 export class FoxBitClient {
@@ -161,6 +162,11 @@ export class FoxBitClient {
       methodSubject: new Subject<any>(),
       methodType: EndpointMethodType.Public,
     },
+    SubscribeTrades: {
+      methodReplyType: EndpointMethodReplyType.ResponseAndEvent,
+      methodSubject: new Subject<any>(),
+      methodType: EndpointMethodType.Public,
+    },
     UnsubscribeTrades: {
       methodReplyType: EndpointMethodReplyType.Response,
       methodSubject: new Subject<any>(),
@@ -223,6 +229,9 @@ export class FoxBitClient {
     // Only alias for SubscribeTicker
     this.endpointDescriptorByMethod['TickerDataUpdateEvent']
       = this.endpointDescriptorByMethod['SubscribeTicker'];
+
+    this.endpointDescriptorByMethod['TradeDataUpdateEvent']
+      = this.endpointDescriptorByMethod['SubscribeTrades'];
   }
 
   private connectSubject;
@@ -1505,16 +1514,68 @@ export class FoxBitClient {
 
     return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
   }
-  // subscribeTrades(omsId: number, instrumentId: number, includeLastCount: number = 100): SubscriptionTradesResponse[] {
-  //   const param = {
-  //     OMSId: omsId,
-  //     InstrumentId: instrumentId,
-  //     IncludeLastCount: includeLastCount,
-  //   };
-  //   return [];
-  // }
-  //
-  // unsubscribeTrades(omsId: number, instrumentId: number): GenericResponse {
-  // }
+
+  /**
+   * Retrieves the latest public market trades and Subscribes User to Trade updates for the
+   * specified Instrument.
+   * ******************
+   * **When subscribed to Trades, you will receive TradeDataUpdateEvent messages from the server**
+   * @param {number} omsId Order Management System ID
+   * @param {number} instrumentId Instrument's Identifier
+   * @param {number} [includeLastCount=100] Specifies the number of previous trades to
+   * retrieve in the immediate snapshot. Default is 100.
+   * @returns {Observable<SubscriptionTradesResponse[]>}
+   * @memberof FoxBitClient
+   */
+  subscribeTrades(omsId: number, instrumentId: number, includeLastCount: number = 100): Observable<SubscriptionTradesResponse[]> {
+    const endpointName = 'SubscribeTrades';
+    const param = {
+      OMSId: omsId,
+      InstrumentId: instrumentId,
+      IncludeLastCount: includeLastCount,
+    };
+
+    const frame = new MessageFrame(MessageType.Request, endpointName, param);
+
+    this.prepareAndSendFrame(frame);
+
+    return this.endpointDescriptorByMethod[endpointName].methodSubject.pipe(
+      map((trades: number[][]) => {
+        const tradesResponse: SubscriptionTradesResponse[] = [];
+
+        for (const snapshot of trades) {
+          tradesResponse.push({
+            TradeId: snapshot[0],
+            InstrumentId: snapshot[1],
+            Quantity: snapshot[2],
+            Price: snapshot[3],
+            Order1: snapshot[4],
+            Order2: snapshot[5],
+            Tradetime: snapshot[6],
+            Direction: snapshot[7],
+            TakerSide: snapshot[8],
+            BlockTrade: !!snapshot[9],
+            Order1or2ClientId: snapshot[10]
+          });
+        }
+
+        return tradesResponse;
+      })
+    );
+  }
+
+  unsubscribeTrades(omsId: number, instrumentId: number): Observable<GenericResponse> {
+    const endpointName = 'UnsubscribeTrades';
+    const param = {
+      OMSId: omsId,
+      InstrumentId: instrumentId
+    };
+
+    const frame = new MessageFrame(MessageType.Request, endpointName, param);
+
+    this.prepareAndSendFrame(frame);
+
+    return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
+  }
 
 }

@@ -80,7 +80,7 @@ describe('# Client FoxBit - Public Api', function suite() {
 
   describe('# Events Test', function suiteEvents() {
 
-    this.timeout('150s');
+    this.timeout('200s');
 
     it('SubscribeLevel1 must return data and fire Level1UpdateEvent', function thunk(done) {
       let eventCount = 0;
@@ -153,6 +153,35 @@ describe('# Client FoxBit - Public Api', function suite() {
       return unsubsPromise;
     });
 
+    it('SubscribeTrades must return data and fire TradeDataUpdateEvent', function thunk(done) {
+      let eventCount = 0;
+      client.subscribeTrades(omsId, /*intrumentId*/ 1, /*includeLastCount*/ 15000)
+        .pipe(take(2))
+        .subscribe((trades) => {
+
+          expect(trades, 'SubscribeTrades cannot be empty').to.not.be.empty;
+
+          if (++eventCount === 1) {
+            expect(trades.length, 'First subscription must return last 10000 trades').to.be.eq(10000);
+          }
+
+          if (eventCount === 2) {
+            done();
+          }
+        }, (err) => done(err));
+      after(() => {
+        expect(eventCount, 'TradeDataUpdateEvent events must be equal "2"').to.be.eq(2);
+      });
+    });
+
+    it('UnsubscribeTrades must be cofirmed by server', () => {
+      const unsubsPromise = client.unsubscribeTrades(omsId, 1).toPromise();
+      unsubsPromise.then((resp) => {
+        expect(resp.result, 'When UnsubscribeTrades, serve must respond "result=true"').to.be.true;
+      });
+      return unsubsPromise;
+    });
+
   });
 
   // // publico
@@ -173,6 +202,7 @@ describe('# Client FoxBit - Public Api', function suite() {
   // [OK] UnsubscribeLevel1,
   // [OK] UnsubscribeLevel2,
   // [OK] UnsubscribeTicker,
+  // [OK] SubscribeTrades
   // [OK] UnsubscribeTrades
   //   // Privado
   // GetAvailablePermissionList,
