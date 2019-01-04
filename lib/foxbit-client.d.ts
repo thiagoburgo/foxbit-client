@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 import { AllDepositOrWithdrawTicketsRequest, CancelReplaceOrderRequest, OrderFeeRequest, SendOrderRequest } from './message-request';
-import { AccountFeesResponse, AccountInfoResult, AccountPositionResult, AccountTradesResult, AllDepositTicketsResult, AllWithdrawTicketsResult, AuthenticateResponse, CancelReplaceOrderResult, GenericResponse, InstrumentResponse, L2SnapshotResponse, OpenOrdersResult, OrderFeeResult, OrderHistoryResult, ProductResponse, SendOrderResult, SubscriptionL2Response, SubscriptionLevel1Response, SubscriptionTickerResponse, UserInfoResponse, SubscriptionTradesResponse } from './message-result';
+import { AccountFeesResponse, AccountInfoResult, AccountPositionResult, AccountTradesResult, AllDepositTicketsResult, AllWithdrawTicketsResult, AuthenticateResponse, CancelReplaceOrderResult, GenericResponse, InstrumentResponse, L2SnapshotResponse, OpenOrdersResult, OrderFeeResult, OrderHistoryResult, ProductResponse, SendOrderResult, SubscriptionL2Response, SubscriptionLevel1Response, SubscriptionTickerResponse, SubscriptionTradesResponse, UserInfoResponse } from './message-result';
 export declare class FoxBitClient {
     private sequenceByMessageType;
     private endpointDescriptorByMethod;
