@@ -159,7 +159,7 @@ export interface SubscriptionTickerResponse {
 // From array
 export interface SubscriptionTradesResponse {
   TradeId: number;
-  ProductPairCode: number;
+  InstrumentId: number;
   Quantity: number;
   Price: number;
   Order1: number;

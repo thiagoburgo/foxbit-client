@@ -14,12 +14,32 @@
             ]
         },
         {
-            "name": "Run teste",
+            "name": "Run testes - ALL",
             "type": "node",
             "request": "launch",
             "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
             "stopOnEntry": false,
             "args": ["--no-timeouts", "--compilers", "ts:ts-node/register", "${workspaceRoot}/test/**/*.spec.ts"],
+            "cwd": "${workspaceRoot}",
+            "protocol": "inspector"
+        },
+        {
+            "name": "Run teste - PUBLIC API",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+            "stopOnEntry": false,
+            "args": ["--no-timeouts", "--compilers", "ts:ts-node/register", "${workspaceRoot}/test/**/*-public.spec.ts"],
+            "cwd": "${workspaceRoot}",
+            "protocol": "inspector"
+        },
+        {
+            "name": "Run teste - PRIVATE API",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+            "stopOnEntry": false,
+            "args": ["--no-timeouts", "--compilers", "ts:ts-node/register", "${workspaceRoot}/test/**/*-private.spec.ts"],
             "cwd": "${workspaceRoot}",
             "protocol": "inspector"
         }

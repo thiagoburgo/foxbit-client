@@ -1,4 +1,5 @@
-import { getUnixTime, format } from 'date-fns';
+import { format } from 'date-fns';
+import ReconnectingWebSocket, { CloseEvent, ErrorEvent } from 'reconnecting-websocket';
 import { Observable, of, Subject } from 'rxjs';
 import { concatMap, map } from 'rxjs/operators';
 import WebSocket from 'ws';
@@ -34,8 +35,8 @@ import {
   SubscriptionLevel1Response,
   SubscriptionTickerResponse,
   UserInfoResponse,
+  SubscriptionTradesResponse,
 } from './message-result';
-
 
 export class FoxBitClient {
 
@@ -161,6 +162,11 @@ export class FoxBitClient {
       methodSubject: new Subject<any>(),
       methodType: EndpointMethodType.Public,
     },
+    SubscribeTrades: {
+      methodReplyType: EndpointMethodReplyType.ResponseAndEvent,
+      methodSubject: new Subject<any>(),
+      methodType: EndpointMethodType.Public,
+    },
     UnsubscribeTrades: {
       methodReplyType: EndpointMethodReplyType.Response,
       methodSubject: new Subject<any>(),
@@ -209,7 +215,7 @@ export class FoxBitClient {
     Ping: null,*/
   };
 
-  private socket: WebSocket;
+  private socket: ReconnectingWebSocket;
 
   constructor() {
     // Only alias for SubscribeLevel1
@@ -223,6 +229,9 @@ export class FoxBitClient {
     // Only alias for SubscribeTicker
     this.endpointDescriptorByMethod['TickerDataUpdateEvent']
       = this.endpointDescriptorByMethod['SubscribeTicker'];
+
+    this.endpointDescriptorByMethod['TradeDataUpdateEvent']
+      = this.endpointDescriptorByMethod['SubscribeTrades'];
   }
 
   private connectSubject;
@@ -237,7 +246,12 @@ export class FoxBitClient {
   public connect(url: string = 'wss://apifoxbitprodlb.alphapoint.com/WSGateway/'): Observable<boolean> {
     try {
       this.connectSubject = new Subject<boolean>();
-      this.socket = new WebSocket(url);
+      const logEnabled = process.env.LOG_ENABLED === 'true';
+      this.socket = new ReconnectingWebSocket(url, [], {
+        WebSocket: WebSocket,
+        debug: logEnabled
+      });
+
       this.initEventHandlers();
     } catch (err) {
       this.connectSubject.error(err);
@@ -271,13 +285,16 @@ export class FoxBitClient {
   }
 
   private initEventHandlers() {
-    this.socket.on('open', () => {
+
+    this.socket.addEventListener('open', () => {
       wsLogger.info('Conexão iniciada com sucesso!');
       this.connectSubject.next(true);
       this.connectSubject.complete();
     });
 
-    this.socket.on('message', (data: any) => {
+    this.socket.addEventListener('message', (message: any) => {
+      const data = message.data;
+
       wsLogger.info('Mensagem recebida (raw)', data);
       const response = JSON.parse(data);
 
@@ -291,7 +308,8 @@ export class FoxBitClient {
         && response.o.hasOwnProperty('result')
         && response.o.errorcode) { // GenericResponse
         const err = response.o;
-        endpointDescriptorByMethod.methodSubject.error(new Error(`${err.errormsg}. ${err.detail}`));
+        endpointDescriptorByMethod.methodSubject.error(new Error(`${response.o.errorcode} - ${err.errormsg}. ${err.detail}`));
+        endpointDescriptorByMethod.methodSubject.complete();
       } else {
         endpointDescriptorByMethod.methodSubject.next(response.o);
       }
@@ -303,8 +321,8 @@ export class FoxBitClient {
 
     });
 
-    this.socket.on('error', (err: Error) => {
-      wsLogger.error('Socket error', err);
+    this.socket.addEventListener('error', (err: ErrorEvent) => {
+      wsLogger.error(`[Socket Error] ${err.type} - ${err.message} - ${err.target}`, err.error);
 
       this.connectSubject.error(err);
       this.connectSubject.complete();
@@ -318,7 +336,9 @@ export class FoxBitClient {
       }
     });
 
-    this.socket.on('close', (code: number, reason: string) => {
+    this.socket.addEventListener('close', (closeEvent: CloseEvent) => {
+      const code: number = closeEvent.code;
+      const reason: string = closeEvent.reason;
 
       if (code > 1000) {
         wsLogger.error('Socket closed: %d-%s', code, reason);
@@ -1133,16 +1153,19 @@ export class FoxBitClient {
    * @returns {Observable<UserInfoResponse>}
    * @memberof FoxBitClient
    */
-  cancelOrder(omsId: number, accountId?: number, clientOrderId?: number, orderId?: number): Observable<GenericResponse> {
+  cancelOrder(omsId: number, accountId?: number, orderId?: number, clientOrderId: number = null): Observable<GenericResponse> {
 
     const endpointName = 'CancelOrder';
-    const param = {
-      ClientOrderId: clientOrderId,
-      AccountId: accountId,
-      OrderId: orderId,
+
+    const param: any = {
       OMSId: omsId,
+      AccountId: accountId,
+      OrderId: orderId
     };
 
+    if (clientOrderId != null) {
+      param.ClientOrderId = clientOrderId;
+    }
     const frame = new MessageFrame(MessageType.Request, endpointName, param);
 
     this.prepareAndSendFrame(frame);
@@ -1210,12 +1233,12 @@ export class FoxBitClient {
    *
    * @param {number} omsId The ID of the Order Management System on which the account exists
    * @param {number} accountId  The ID of the account on the Order Management System for which information will be returned.
-   * @param {number} accountHandle  AccountHandle is a unique user-assigned name that is checked at create
+   * @param {string} accountHandle  AccountHandle is a unique user-assigned name that is checked at create
    * time by the Order Management System. Alternate to Account ID.
    * @returns {Observable<AccountInfoResult>}
    * @memberof FoxBitClient
    */
-  getAccountInfo(omsId: number, accountId: number, accountHandle: number): Observable<AccountInfoResult> {
+  getAccountInfo(omsId: number, accountId: number, accountHandle: string): Observable<AccountInfoResult> {
     const endpointName = 'GetAccountInfo';
 
     const param = {
@@ -1273,7 +1296,7 @@ export class FoxBitClient {
    * @returns {Observable<AccountTradesResult>}
    * @memberof FoxBitClient
    */
-  getAccountTrades(accountId: number, omsId: number, startIndex: number, count: number): Observable<AccountTradesResult> {
+  getAccountTrades(accountId: number, omsId: number, startIndex: number, count: number): Observable<AccountTradesResult[]> {
     const endpointName = 'GetAccountTrades';
 
     const param = {
@@ -1328,7 +1351,7 @@ export class FoxBitClient {
    * @returns {Observable<OpenOrdersResult>}
    * @memberof FoxBitClient
    */
-  getOpenOrders(accountId: number, omsId: number): Observable<OpenOrdersResult> {
+  getOpenOrders(accountId: number, omsId: number): Observable<OpenOrdersResult[]> {
     const endpointName = 'GetOpenOrders';
 
     const param = {
@@ -1491,16 +1514,68 @@ export class FoxBitClient {
 
     return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
   }
-  // subscribeTrades(omsId: number, instrumentId: number, includeLastCount: number = 100): SubscriptionTradesResponse[] {
-  //   const param = {
-  //     OMSId: omsId,
-  //     InstrumentId: instrumentId,
-  //     IncludeLastCount: includeLastCount,
-  //   };
-  //   return [];
-  // }
-  //
-  // unsubscribeTrades(omsId: number, instrumentId: number): GenericResponse {
-  // }
+
+  /**
+   * Retrieves the latest public market trades and Subscribes User to Trade updates for the
+   * specified Instrument.
+   * ******************
+   * **When subscribed to Trades, you will receive TradeDataUpdateEvent messages from the server**
+   * @param {number} omsId Order Management System ID
+   * @param {number} instrumentId Instrument's Identifier
+   * @param {number} [includeLastCount=100] Specifies the number of previous trades to
+   * retrieve in the immediate snapshot. Default is 100.
+   * @returns {Observable<SubscriptionTradesResponse[]>}
+   * @memberof FoxBitClient
+   */
+  subscribeTrades(omsId: number, instrumentId: number, includeLastCount: number = 100): Observable<SubscriptionTradesResponse[]> {
+    const endpointName = 'SubscribeTrades';
+    const param = {
+      OMSId: omsId,
+      InstrumentId: instrumentId,
+      IncludeLastCount: includeLastCount,
+    };
+
+    const frame = new MessageFrame(MessageType.Request, endpointName, param);
+
+    this.prepareAndSendFrame(frame);
+
+    return this.endpointDescriptorByMethod[endpointName].methodSubject.pipe(
+      map((trades: number[][]) => {
+        const tradesResponse: SubscriptionTradesResponse[] = [];
+
+        for (const snapshot of trades) {
+          tradesResponse.push({
+            TradeId: snapshot[0],
+            InstrumentId: snapshot[1],
+            Quantity: snapshot[2],
+            Price: snapshot[3],
+            Order1: snapshot[4],
+            Order2: snapshot[5],
+            Tradetime: snapshot[6],
+            Direction: snapshot[7],
+            TakerSide: snapshot[8],
+            BlockTrade: !!snapshot[9],
+            Order1or2ClientId: snapshot[10]
+          });
+        }
+
+        return tradesResponse;
+      })
+    );
+  }
+
+  unsubscribeTrades(omsId: number, instrumentId: number): Observable<GenericResponse> {
+    const endpointName = 'UnsubscribeTrades';
+    const param = {
+      OMSId: omsId,
+      InstrumentId: instrumentId
+    };
+
+    const frame = new MessageFrame(MessageType.Request, endpointName, param);
+
+    this.prepareAndSendFrame(frame);
+
+    return this.endpointDescriptorByMethod[endpointName].methodSubject.asObservable();
+  }
 
 }

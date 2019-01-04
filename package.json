@@ -1,7 +1,7 @@
 {
   "name": "foxbit-client",
   "version": "1.0.0",
-  "description": "Cliente para a corretora brasileira de FoxBit de criptomoedas",
+  "description": "Client API to FoxBit Exchange",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
@@ -14,7 +14,12 @@
     "preversion": "npm run lint",
     "version": "npm run format && git add -A src",
     "postversion": "git push && git push --tags",
-    "test": "mocha --require ts-node/register test/**/*.ts"
+    "test-public-api-debug": "cross-env LOG_ENABLED=true mocha --require ts-node/register test/**/*-public*.ts",
+    "test-public-api": "cross-env LOG_ENABLED=false mocha --require ts-node/register test/**/*-public*.ts",
+    "test-private-api-debug": "cross-env LOG_ENABLED=true mocha --require ts-node/register test/**/*-private*.ts",
+    "test-private-api": "cross-env LOG_ENABLED=false mocha --require ts-node/register test/**/*-private*.ts",
+    "test-debug": "cross-env LOG_ENABLED=true mocha --require ts-node/register test/**/*.ts",
+    "test": "cross-env LOG_ENABLED=false mocha --require ts-node/register test/**/*.ts"
   },
   "repository": {
     "type": "git",
