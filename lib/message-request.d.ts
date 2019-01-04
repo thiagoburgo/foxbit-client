@@ -1,4 +1,4 @@
-import { OrderType, PegPriceType, Side, TimeInForce, MakerTaker, DepositStatus, AmountOperator } from './message-enums';
+import { AmountOperator, DepositStatus, MakerTaker, OrderType, PegPriceType, Side, TimeInForce } from './message-enums';
 export interface CancelReplaceOrderRequest {
     /**
      * The ID of the Order Management System on which the order is being canceled

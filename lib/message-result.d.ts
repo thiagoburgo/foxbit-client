@@ -1,4 +1,4 @@
-import { ActionType, InstrumentType, MarketPriceDirection, ProductType, SessionStatus, Side, OrderType, SideResponse, OrderStateResponse, ChangeReasonResponse, SendOrderStatusResponse, OrderTypeResponse, DepositStatusResponse, WithdrawStatus } from './message-enums';
+import { ActionType, ChangeReasonResponse, DepositStatusResponse, InstrumentType, MarketPriceDirection, OrderStateResponse, OrderType, OrderTypeResponse, ProductType, SendOrderStatusResponse, SessionStatus, Side, SideResponse, WithdrawStatus } from './message-enums';
 export interface GenericResponse {
     /**
      * If the call has been successfully received by the Order Management System,
