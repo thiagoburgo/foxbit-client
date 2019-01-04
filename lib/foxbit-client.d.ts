@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 import { AllDepositOrWithdrawTicketsRequest, CancelReplaceOrderRequest, OrderFeeRequest, SendOrderRequest } from './message-request';
-import { AccountFeesResponse, AccountInfoResult, AccountPositionResult, AccountTradesResult, AllDepositTicketsResult, AllWithdrawTicketsResult, AuthenticateResponse, CancelReplaceOrderResult, GenericResponse, InstrumentResponse, L2SnapshotResponse, OpenOrdersResult, OrderFeeResult, OrderHistoryResult, ProductResponse, SendOrderResult, SubscriptionL2Response, SubscriptionLevel1Response, SubscriptionTickerResponse, UserInfoResponse } from './message-result';
+import { AccountFeesResponse, AccountInfoResult, AccountPositionResult, AccountTradesResult, AllDepositTicketsResult, AllWithdrawTicketsResult, AuthenticateResponse, CancelReplaceOrderResult, GenericResponse, InstrumentResponse, L2SnapshotResponse, OpenOrdersResult, OrderFeeResult, OrderHistoryResult, ProductResponse, SendOrderResult, SubscriptionL2Response, SubscriptionLevel1Response, SubscriptionTickerResponse, UserInfoResponse, SubscriptionTradesResponse } from './message-result';
 export declare class FoxBitClient {
     private sequenceByMessageType;
     private endpointDescriptorByMethod;
@@ -29,9 +29,9 @@ export declare class FoxBitClient {
      * @memberof FoxBitClient
      */
     disconnect(): void;
-    private initEventHandlers;
-    private calculateMessageFrameSequence;
-    private prepareAndSendFrame;
+    private initEventHandlers();
+    private calculateMessageFrameSequence(messageFrame);
+    private prepareAndSendFrame(frame);
     /**
      * Logout ends the current websocket session
      * **********************
@@ -158,14 +158,17 @@ export declare class FoxBitClient {
      * requirements.
      * **********************
      * Endpoint Type: Public
+     * @param {number} omsId The ID of the Order Management System.
      * @param {number} instrumentId The ID of a specific instrument. The Order Management System
      * and the default Account ID of the logged-in user are assumed.
-     * @param {Date} fromDate Oldest date from which the ticker history will start, in POSIX format
-     * and UTC time zone. The report moves toward the present from this point.
+     * @param {Date} fromDate Oldest date from which the ticker history will start, in 'yyyy-MM-ddThh:mm:ssZ' format.
+     * The report moves toward the present from this point.
+     * @param {Date} [toDate=new Date()]
+     * @param {number} [interval=60] Interval in minutes to consider tickers
      * @returns {Observable<SubscriptionTickerResponse[]>}
      * @memberof FoxBitClient
      */
-    getTickerHistory(instrumentId: number, fromDate: Date): Observable<SubscriptionTickerResponse[]>;
+    getTickerHistory(omsId: number, instrumentId: number, fromDate: Date, toDate?: Date, interval?: number): Observable<SubscriptionTickerResponse[]>;
     /**
      * Retrieves the latest Level 1 Ticker information and then subscribes the user to ongoing Level 1
      * market data event updates for one specific instrument. For more information about Level 1
@@ -192,12 +195,12 @@ export declare class FoxBitClient {
      * @param {number} omsId The ID of the Order Management System on which the instrument trades.
      * @param {(number | string)} instrumentIdOrSymbol The ID of the instrument you’re tracking
      * or The symbol of the instrument you’re tracking
-     * @param {number} depth Depth in this call is “depth of market,” the number of buyers and sellers at greater or lesser prices in
+     * @param {number} depth Depth in this call is “depth of market”, the number of buyers and sellers at greater or lesser prices in
      * the order book for the instrument.
      * @returns {Observable<SubscriptionL2Response>}
      * @memberof FoxBitClient
      */
-    subscribeLevel2(omsId: number, instrumentIdOrSymbol: number | string, depth: number): Observable<SubscriptionL2Response>;
+    subscribeLevel2(omsId: number, instrumentIdOrSymbol: number | string, depth?: number): Observable<SubscriptionL2Response[]>;
     /**
      * Subscribes a user to a Ticker Market Data Feed for a specific instrument and interval.
      * SubscribeTicker sends a response object as described below, and then periodically returns a
@@ -212,7 +215,8 @@ export declare class FoxBitClient {
      * @returns {Observable<SubscriptionTickerResponse>}
      * @memberof FoxBitClient
      */
-    subscribeTicker(omsId: number, instrumentId: number, interval?: number, includeLastCount?: number): Observable<SubscriptionTickerResponse>;
+    subscribeTicker(omsId: number, instrumentId: number, interval?: number, includeLastCount?: number): Observable<SubscriptionTickerResponse[]>;
+    private mapTicker;
     /**
      * Unsubscribes the user from a Level 1 Market Data Feed subscription..
      * **********************
@@ -247,6 +251,9 @@ export declare class FoxBitClient {
      */
     unsubscribeTicker(omsId: number, instrumentId: number): Observable<GenericResponse>;
     /**
+     * **************************
+     * API returns 'Endpoint not found'
+     * **************************
      * Retrieves a comma-separated array of all permissions that can be assigned to a user.
      * An administrator or superuser can set permissions for each user on an API-call by API-call
      * basis, to allow for highly granular control. Common permission sets include Trading, Deposit,
@@ -258,7 +265,6 @@ export declare class FoxBitClient {
      * @returns {Observable<string[]>}
      * @memberof FoxBitClient
      */
-    getAvailablePermissionList(): Observable<string[]>;
     /**
      * **GetUserConfig** returns the list of key/value pairs set by the **SetUserConfig** call and associated with
      * a user record. A trading venue can use Config strings to store custom information or compliance
@@ -378,7 +384,7 @@ export declare class FoxBitClient {
      * @returns {Observable<UserInfoResponse>}
      * @memberof FoxBitClient
      */
-    cancelOrder(omsId: number, accountId?: number, clientOrderId?: number, orderId?: number): Observable<GenericResponse>;
+    cancelOrder(omsId: number, accountId?: number, orderId?: number, clientOrderId?: number): Observable<GenericResponse>;
     /**
      * Cancels a quote that has not been executed yet.
      * Quoting is not enabled for the retail end user of the AlphaPoint software.
@@ -411,12 +417,12 @@ export declare class FoxBitClient {
      *
      * @param {number} omsId The ID of the Order Management System on which the account exists
      * @param {number} accountId  The ID of the account on the Order Management System for which information will be returned.
-     * @param {number} accountHandle  AccountHandle is a unique user-assigned name that is checked at create
+     * @param {string} accountHandle  AccountHandle is a unique user-assigned name that is checked at create
      * time by the Order Management System. Alternate to Account ID.
      * @returns {Observable<AccountInfoResult>}
      * @memberof FoxBitClient
      */
-    getAccountInfo(omsId: number, accountId: number, accountHandle: number): Observable<AccountInfoResult>;
+    getAccountInfo(omsId: number, accountId: number, accountHandle: string): Observable<AccountInfoResult>;
     /**
      * Retrieves a list of positions (balances) for a specific user account running
      * under a specific Order Management System.
@@ -445,7 +451,7 @@ export declare class FoxBitClient {
      * @returns {Observable<AccountTradesResult>}
      * @memberof FoxBitClient
      */
-    getAccountTrades(accountId: number, omsId: number, startIndex: number, count: number): Observable<AccountTradesResult>;
+    getAccountTrades(accountId: number, omsId: number, startIndex: number, count: number): Observable<AccountTradesResult[]>;
     /**
      * Returns a list of transactions for a specific account on an Order Management System.
      * The owner of the trading venue determines how long to retain order history before archiving.
@@ -469,7 +475,7 @@ export declare class FoxBitClient {
      * @returns {Observable<OpenOrdersResult>}
      * @memberof FoxBitClient
      */
-    getOpenOrders(accountId: number, omsId: number): Observable<OpenOrdersResult>;
+    getOpenOrders(accountId: number, omsId: number): Observable<OpenOrdersResult[]>;
     /**
      * Creates an order. Anyone submitting an order should also subscribe to the various market data and
      * event feeds, or call GetOpenOrders or GetOrderStatus to monitor the status of the order. If the
@@ -537,4 +543,18 @@ export declare class FoxBitClient {
      * @memberof FoxBitClient
      */
     getWithdrawTicket(omsId: number, operatorId: number, requestCode: string, accountId: number): Observable<AllWithdrawTicketsResult>;
+    /**
+     * Retrieves the latest public market trades and Subscribes User to Trade updates for the
+     * specified Instrument.
+     * ******************
+     * **When subscribed to Trades, you will receive TradeDataUpdateEvent messages from the server**
+     * @param {number} omsId Order Management System ID
+     * @param {number} instrumentId Instrument's Identifier
+     * @param {number} [includeLastCount=100] Specifies the number of previous trades to
+     * retrieve in the immediate snapshot. Default is 100.
+     * @returns {Observable<SubscriptionTradesResponse[]>}
+     * @memberof FoxBitClient
+     */
+    subscribeTrades(omsId: number, instrumentId: number, includeLastCount?: number): Observable<SubscriptionTradesResponse[]>;
+    unsubscribeTrades(omsId: number, instrumentId: number): Observable<GenericResponse>;
 }

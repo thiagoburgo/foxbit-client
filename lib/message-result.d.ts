@@ -89,8 +89,8 @@ export interface ProductResponse {
 export interface L2SnapshotResponse {
     MDUpdateID: number;
     Accounts: number;
-    ActionDateTime: string;
-    ActionType: number;
+    ActionDateTime: number;
+    ActionType: ActionType;
     LastTradePrice: number;
     Orders: number;
     Price: number;
@@ -144,7 +144,7 @@ export interface SubscriptionTickerResponse {
 }
 export interface SubscriptionTradesResponse {
     TradeId: number;
-    ProductPairCode: number;
+    InstrumentId: number;
     Quantity: number;
     Price: number;
     Order1: number;

@@ -1,4 +1,4 @@
-import { format, loggers, transports } from 'winston';
+import { format, loggers, transports, Logger } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 
 const rotateFileBaseOptions = {
@@ -46,6 +46,6 @@ loggers.add('ws', {
     format: formatBase
 });
 
-export const logger = loggers.get('default');
+export const logger: Logger = loggers.get('default');
 
-export const wsLogger = loggers.get('ws');
+export const wsLogger: Logger = loggers.get('ws');
