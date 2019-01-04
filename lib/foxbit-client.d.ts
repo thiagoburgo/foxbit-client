@@ -29,9 +29,9 @@ export declare class FoxBitClient {
      * @memberof FoxBitClient
      */
     disconnect(): void;
-    private initEventHandlers();
-    private calculateMessageFrameSequence(messageFrame);
-    private prepareAndSendFrame(frame);
+    private initEventHandlers;
+    private calculateMessageFrameSequence;
+    private prepareAndSendFrame;
     /**
      * Logout ends the current websocket session
      * **********************

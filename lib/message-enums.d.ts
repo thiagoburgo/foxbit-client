@@ -4,59 +4,59 @@ export declare enum MessageType {
     Subscribe = 2,
     Event = 3,
     Unsubscribe = 4,
-    Error = 5,
+    Error = 5
 }
 export declare enum InstrumentType {
     Unknown = 0,
-    Standard = 1,
+    Standard = 1
 }
 export declare enum SessionStatus {
     Unknown = 0,
     Running = 1,
     Paused = 2,
     Stopped = 3,
-    Starting = 4,
+    Starting = 4
 }
 export declare enum ProductType {
     Unknown = 0,
     NationalCurrency = 1,
     CryptoCurrency = 2,
-    Contract = 3,
+    Contract = 3
 }
 export declare enum Side {
     Buy = 0,
     Sell = 1,
     Short = 2,
-    Unknown = 3,
+    Unknown = 3
 }
 export declare enum SideResponse {
     Buy = 0,
     Sell = 1,
     Short = 2,
-    Unknown = 3,
+    Unknown = 3
 }
 export declare enum ActionType {
     New = 0,
     Update = 1,
-    Delete = 2,
+    Delete = 2
 }
 export declare enum MarketPriceDirection {
     NoChange = 0,
     UpTick = 1,
-    DownTick = 2,
+    DownTick = 2
 }
 export declare enum PegPriceType {
     Unknown = 0,
     Last = 1,
     Bid = 2,
     Ask = 3,
-    Midpoint = 4,
+    Midpoint = 4
 }
 export declare enum TimeInForce {
     Unknown = 0,
     GTC = 1,
     IOC = 2,
-    FOK = 3,
+    FOK = 3
 }
 export declare enum OrderType {
     Unknown = 0,
@@ -66,12 +66,12 @@ export declare enum OrderType {
     StopLimit = 4,
     TrailingStopMarket = 5,
     TrailingStopLimit = 6,
-    BlockTrade = 7,
+    BlockTrade = 7
 }
 export declare enum MakerTaker {
     Unknown = "Unknown",
     Maker = "Maker",
-    Taker = "Taker",
+    Taker = "Taker"
 }
 export declare enum OrderTypeResponse {
     Unknown = "Unknown",
@@ -81,14 +81,14 @@ export declare enum OrderTypeResponse {
     StopLimit = "StopLimit",
     TrailingStopMarket = "TrailingStopMarket",
     TrailingStopLimit = "TrailingStopLimit",
-    BlockTrade = "BlockTrade",
+    BlockTrade = "BlockTrade"
 }
 export declare enum OrderStateResponse {
     Working = "Working",
     Rejected = "Rejected",
     Canceled = "Canceled",
     Expired = "Expired",
-    FullyExecuted = "FullyExecuted",
+    FullyExecuted = "FullyExecuted"
 }
 export declare enum ChangeReasonResponse {
     NewInputAccepted = "NewInputAccepted",
@@ -99,11 +99,11 @@ export declare enum ChangeReasonResponse {
     SystemCanceled_NoMoreMarket = "SystemCanceled_NoMoreMarket",
     SystemCanceled_BelowMinimum = "SystemCanceled_BelowMinimum",
     NoChange = "NoChange",
-    UserModified = "UserModified",
+    UserModified = "UserModified"
 }
 export declare enum SendOrderStatusResponse {
     Accepted = "Accepted",
-    Rejected = "Rejected",
+    Rejected = "Rejected"
 }
 export declare enum DepositStatus {
     New = 0,
@@ -113,7 +113,7 @@ export declare enum DepositStatus {
     SystemProcessing = 4,
     FullyProcessed = 5,
     Failed = 6,
-    Pending = 7,
+    Pending = 7
 }
 export declare enum WithdrawStatus {
     New = 0,
@@ -126,7 +126,7 @@ export declare enum WithdrawStatus {
     Pending = 7,
     Pending2Fa = 8,
     AutoAccepted = 9,
-    Delayed = 10,
+    Delayed = 10
 }
 export declare enum DepositStatusResponse {
     New = "New",
@@ -136,10 +136,10 @@ export declare enum DepositStatusResponse {
     SystemProcessing = "SystemProcessing",
     FullyProcessed = "FullyProcessed",
     Failed = "Failed",
-    Pending = "Pending",
+    Pending = "Pending"
 }
 export declare enum AmountOperator {
     TicketsEqualToAmount = 0,
     TicketsEqualOrGreaterThanAmount = 1,
-    TicketsLessThanAmount = 2,
+    TicketsLessThanAmount = 2
 }
