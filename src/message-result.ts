@@ -1,5 +1,19 @@
-import { ActionType, InstrumentType, MarketPriceDirection, ProductType, SessionStatus, Side, OrderType, SideResponse, OrderStateResponse, ChangeReasonResponse, SendOrderStatusResponse, OrderTypeResponse, DepositStatusResponse, WithdrawStatus } from './message-enums';
-import { window } from 'rxjs/operators';
+import {
+  ActionType,
+  ChangeReasonResponse,
+  DepositStatusResponse,
+  InstrumentType,
+  MarketPriceDirection,
+  OrderStateResponse,
+  OrderType,
+  OrderTypeResponse,
+  ProductType,
+  SendOrderStatusResponse,
+  SessionStatus,
+  Side,
+  SideResponse,
+  WithdrawStatus,
+} from './message-enums';
 
 export interface GenericResponse {
 
@@ -1415,7 +1429,7 @@ export interface AllWithdrawTicketsResult {
    */
   AssetId: number;
   /**
-   * The readable name of the asset in which the withdrawal is denominated, 
+   * The readable name of the asset in which the withdrawal is denominated,
    * for example, “US Dollar” or “BitCoin.”
    * @type {string}
    * @memberof AllWithdrawTicketsResult

@@ -34,8 +34,8 @@ import {
   SubscriptionL2Response,
   SubscriptionLevel1Response,
   SubscriptionTickerResponse,
-  UserInfoResponse,
   SubscriptionTradesResponse,
+  UserInfoResponse,
 } from './message-result';
 
 export class FoxBitClient {
@@ -248,7 +248,7 @@ export class FoxBitClient {
       this.connectSubject = new Subject<boolean>();
       const logEnabled = process.env.LOG_ENABLED === 'true';
       this.socket = new ReconnectingWebSocket(url, [], {
-        WebSocket: WebSocket,
+        WebSocket,
         debug: logEnabled
       });
 
@@ -637,7 +637,7 @@ export class FoxBitClient {
             ProductPairCode: snapshot[7],
             Quantity: snapshot[8],
             Side: snapshot[9]
-          } as L2SnapshotResponse);
+          });
         }
 
         return snapshotsResponse;
@@ -710,7 +710,6 @@ export class FoxBitClient {
    */
   getTickerHistory(omsId: number, instrumentId: number, fromDate: Date, toDate: Date = new Date(), interval: number = 60)
     : Observable<SubscriptionTickerResponse[]> {
-    // ws.send(JSON.stringify({"m":0,"i":1,"n":"GetTickerHistory","o":"{\"OMSId\":1,\"InstrumentId\":1,\"FromDate\":\"2018-12-20\",\"ToDate\":\"2018-12-21\",\"Interval\":\"60\"}"}))
     const frame = new MessageFrame(MessageType.Request,
       'GetTickerHistory', {
         OMSId: omsId,
@@ -921,7 +920,7 @@ export class FoxBitClient {
   // ============== Private Endpoints ================
 
   /**
-   * ************************** 
+   * **************************
    * API returns 'Endpoint not found'
    * **************************
    * Retrieves a comma-separated array of all permissions that can be assigned to a user.
