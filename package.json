@@ -1,7 +1,7 @@
 {
   "name": "foxbit-client",
   "version": "1.0.0",
-  "description": "Cliente para a corretora brasileira de FoxBit de criptomoedas",
+  "description": "Client API to FoxBit Exchange",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
