@@ -6,6 +6,7 @@ module.exports = {
     excludePrivate: true,
     excludeNotExported: true,
     excludeExternals: true,
+    name: 'Foxbit API - Documentation',
     //target: 'ES5',
     //moduleResolution: 'node',
     //preserveConstEnums: true,
