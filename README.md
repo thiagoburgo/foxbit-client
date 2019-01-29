@@ -20,6 +20,8 @@ npm i git+https://github.com/thiagoburgo/foxbit-client.git
 
 ---
 
-## How to use
+## Documentation
+
+[Go to documentation](https://thiagoburgo.github.io/foxbit-client/docs/globals.html)
 
 
