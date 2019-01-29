@@ -2,6 +2,7 @@ import {
   ActionType,
   ChangeReasonResponse,
   DepositStatusResponse,
+  FeeCalcTypeResponse,
   InstrumentType,
   MarketPriceDirection,
   OrderStateResponse,
@@ -59,10 +60,26 @@ export interface GenericResponse {
   detail: string;
 }
 
+/**
+ * Fo a specific account represents a fee for a instrument
+ * @export
+ * @interface AccountFeesResponse
+ */
 export interface AccountFeesResponse {
+  /**
+   * Unique identifier for a fee
+   * @type {number}
+   * @memberof AccountFeesResponse
+   */
   FeeId: number;
+
+  /**
+   * Fee amount
+   * @type {number}
+   * @memberof AccountFeesResponse
+   */
   FeeAmt: number;
-  FeeCalcType: string;
+  FeeCalcType: FeeCalcTypeResponse;
   FeeType: string;
   LadderThreshold: number;
   LadderSeconds: number;

@@ -380,10 +380,10 @@ export class FoxBitClient {
    * Logout ends the current websocket session
    * **********************
    * Endpoint Type: Public
-   * @returns {Observable<any>}
+   * @returns {Observable<boolean>}
    * @memberof FoxBitClient
    */
-  logOut(): Observable<any> {
+  logOut(): Observable<boolean> {
     const frame = new MessageFrame(MessageType.Request, 'LogOut', {});
     this.prepareAndSendFrame(frame);
 
@@ -1105,13 +1105,13 @@ export class FoxBitClient {
    * | UserId 37 | AccId 14 | Instr 25 |                                    Result                                   |
    * |:---------:|:--------:|:--------:|:---------------------------------------------------------------------------:|
    * |     X     |     X    |     X    | Account #14 belonging to user #37 for instrument #25.                       |
-   * |     X     |     X    |          | Account #14 belonging to user #37 for all instruments.                      |
-   * |     X     |          |     X    | All accounts belonging to user #37 for instrument #25.                      |
-   * |     X     |          |          | All accounts belonging to user #37 for all instruments.                     |
-   * |           |     X    |     X    | All users of account #14 for instrument #25.                                |
-   * |           |     X    |          | All users of account #14 for all instruments.                               |
-   * |           |          |     X    | All accounts of all users for instrument #25. (requires special permission) |
-   * |           |          |          | All accounts of all users for all instruments (requires special permission) |
+   * |     X     |     X    |          | Account #14 belonging to user #37 for all instruments.                      |
+   * |     X     |          |     X    | All accounts belonging to user #37 for instrument #25.                      |
+   * |     X     |          |          | All accounts belonging to user #37 for all instruments.                     |
+   * |           |     X    |     X    | All users of account #14 for instrument #25.                                |
+   * |           |     X    |          | All users of account #14 for all instruments.                               |
+   * |           |          |     X    | All accounts of all users for instrument #25. (requires special permission) |
+   * |           |          |          | All accounts of all users for all instruments (requires special permission) |
    *
    * @param {number} omsId The Order Management System under which the account operates.Required
    * @param {number} [accountId] The account for which all orders are being canceled. Conditionally optional.
@@ -1594,6 +1594,15 @@ export class FoxBitClient {
     );
   }
 
+  /**
+   * Unsubscribes a user from the Trades Market Data Feed.
+   * @param {number} omsId The ID of the Order Management System on which the user has
+   * subscribed to a trades market data feed.
+   * @param {number} instrumentId The ID of the instrument being tracked by the trades
+   * market data feed.
+   * @returns {Observable<GenericResponse>}
+   * @memberof FoxBitClient
+   */
   unsubscribeTrades(omsId: number, instrumentId: number): Observable<GenericResponse> {
     const endpointName = 'UnsubscribeTrades';
     const param = {

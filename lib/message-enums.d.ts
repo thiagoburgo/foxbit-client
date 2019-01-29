@@ -138,6 +138,10 @@ export declare enum DepositStatusResponse {
     Failed = "Failed",
     Pending = "Pending"
 }
+export declare enum FeeCalcTypeResponse {
+    Percentage = "Percentage",
+    FlatRate = "FlatRate"
+}
 export declare enum AmountOperator {
     TicketsEqualToAmount = 0,
     TicketsEqualOrGreaterThanAmount = 1,

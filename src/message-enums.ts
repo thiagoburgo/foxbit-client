@@ -156,6 +156,11 @@ export enum DepositStatusResponse {
   Pending = 'Pending',
 }
 
+export enum FeeCalcTypeResponse {
+  Percentage = 'Percentage',
+  FlatRate = 'FlatRate'
+}
+
 export enum AmountOperator {
   TicketsEqualToAmount = 0,
   TicketsEqualOrGreaterThanAmount = 1,
