@@ -1,1 +1,4 @@
 theme: jekyll-theme-minimal
+include: ['*.html']
+source: docs
+destination: docs/_site
