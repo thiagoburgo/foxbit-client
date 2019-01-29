@@ -7,6 +7,9 @@ import { take } from 'rxjs/operators';
 
 import { FoxBitClient } from '../src/foxbit-client';
 
+import * as check from 'check-types';
+import { ProductType } from '../src/message-enums';
+
 describe('# Client FoxBit - Public Api', function suite() {
   this.timeout('30s');
   const client = new FoxBitClient();
@@ -57,6 +60,22 @@ describe('# Client FoxBit - Public Api', function suite() {
 
   it('GetProduct by id=1 must return data', (done) => {
     client.getProduct(omsId, 1).subscribe((product) => {
+
+      // let result = check.all(check.map(product, {
+      //   OMSId: check.number,
+      //   ProductId: check.number,
+      //   Product: check.string,
+      //   ProductFullName: check.string,
+      //   ProductType: (...args: any[]) => {
+      //     const values = Object.keys(ProductType)
+      //       .filter(key => !isNaN(+key))
+      //       .map((k) => ProductType[k]);
+      //     return check.includes(values, args[0])
+      //   },
+      //   DecimalPlaces: check.number,
+      //   TickSize: check.number,
+      //   NoFees: check.boolean
+      // }));
       expect(product, 'Product cannot be null').to.not.be.null;
       expect(product.ProductId, 'Product must be 1').to.be.eq(1);
       done();
