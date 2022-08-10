@@ -234,11 +234,11 @@ export class FoxBitClient {
   /**
    * Connect to FoxBit websocket endpoint
    *
-   * @param {string} [url='wss://apifoxbitprodlb.alphapoint.com/WSGateway/']
+   * @param {string} [url='wss://api.foxbit.com.br/WSGateway/']
    * @returns {Observable<boolean>}
    * @memberof FoxBitClient
    */
-  public connect(url: string = 'wss://apifoxbitprodlb.alphapoint.com/WSGateway/'): Observable<boolean> {
+  public connect(url: string = 'wss://api.foxbit.com.br/WSGateway/'): Observable<boolean> {
     try {
       this.connectSubject = new Subject<boolean>();
       const logEnabled = process.env.LOG_ENABLED === 'true';
